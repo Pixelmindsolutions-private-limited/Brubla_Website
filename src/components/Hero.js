@@ -10,6 +10,20 @@ const API_BASE_URL = "http://31.97.228.17:4077";
 const HERO_API_ENDPOINT = `${API_BASE_URL}/api/admin/homepage/hero`;
 
 /* ─────────────────────────────────────────────
+   REDIRECTION HELPER
+───────────────────────────────────────────── */
+
+const handleRedirection = (link, navigate) => {
+  if (!link) return false;
+  if (link.startsWith("http://") || link.startsWith("https://")) {
+    window.location.href = link;
+  } else {
+    navigate(link);
+  }
+  return true;
+};
+
+/* ─────────────────────────────────────────────
    YOUTUBE HELPER
 ───────────────────────────────────────────── */
 
@@ -175,12 +189,38 @@ const Carousel = ({ banners }) => {
     }
   }, [cur, banners]);
 
-  const getButtonText = (banner) => {
-    switch (banner.type) {
-      case "image": return "View Image";
-      case "video": return "Play Video";
-      case "youtube": return "Watch Video";
-      default: return "View";
+  /* Handle banner click: redirectionLink overrides everything */
+  const handleBannerClick = (banner, e) => {
+    // If redirectionLink exists, it takes priority (override)
+    if (banner.redirectionLink) {
+      // If it's an <a> element, let the browser handle default navigation
+      // but still use our router-aware helper for internal links
+      if (
+        banner.redirectionLink.startsWith("http://") ||
+        banner.redirectionLink.startsWith("https://")
+      ) {
+        // Let the anchor's native href do the work (external)
+        return;
+      }
+      // Internal link: prevent default anchor jump and use router
+      if (e) e.preventDefault();
+      handleRedirection(banner.redirectionLink, navigate);
+      return;
+    }
+    // Otherwise fall back to modal for youtube/video
+    if (banner.type === "youtube" || banner.type === "video") {
+      setSelectedBanner(banner);
+    }
+  };
+
+  /* Handle CTA button click */
+  const handleCtaClick = (e, banner) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (banner.redirectionLink) {
+      handleRedirection(banner.redirectionLink, navigate);
+    } else {
+      navigate('/products');
     }
   };
 
@@ -191,7 +231,7 @@ const Carousel = ({ banners }) => {
           <img
             src={banner.url}
             alt={banner.title || "Hero image"}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
             loading="lazy"
           />
         );
@@ -203,12 +243,12 @@ const Carousel = ({ banners }) => {
             muted
             loop
             playsInline
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           />
         );
       case "youtube":
         return (
-          <div className="absolute inset-0 w-full h-full bg-black overflow-hidden">
+          <div className="absolute inset-0 w-full h-full bg-black overflow-hidden pointer-events-none">
             {isActive && activeYouTube === banner._id ? (
               <iframe
                 src={getYouTubeEmbedUrl(banner.url, { autoplay: true, mute: true, controls: false })}
@@ -217,9 +257,9 @@ const Carousel = ({ banners }) => {
                   top: "50%", left: "50%",
                   transform: "translate(-50%, -50%) scale(1.08)",
                   width: "100vw",
-                  height: "56.25vw",       /* 16:9 ratio */
+                  height: "56.25vw",
                   minHeight: "100vh",
-                  minWidth: "177.78vh",    /* inverse 16:9 ratio */
+                  minWidth: "177.78vh",
                   pointerEvents: "none",
                 }}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -248,63 +288,96 @@ const Carousel = ({ banners }) => {
   }
 
   return (
-    /* Full viewport height, full width */
     <div className="relative w-full h-screen overflow-hidden group bg-black">
-      {banners.map((banner, index) => (
-        <div
-          key={banner._id}
-          className="absolute inset-0 transition-all duration-700 ease-in-out"
-          style={{
-            opacity: index === cur ? 1 : 0,
-            visibility: index === cur ? "visible" : "hidden",
-            transform: `scale(${index === cur ? 1 : 1.04})`,
-          }}
-        >
-          {/* Media layer */}
-          {renderMedia(banner, index === cur)}
+      {banners.map((banner, index) => {
+        const isActive = index === cur;
+        const hasRedirect = Boolean(banner.redirectionLink);
 
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10 pointer-events-none" />
+        /* Shared className/style for both <a> and <div> */
+        const slideClassName =
+          "absolute inset-0 transition-all duration-700 ease-in-out";
+        const slideStyle = {
+          opacity: isActive ? 1 : 0,
+          visibility: isActive ? "visible" : "hidden",
+          transform: `scale(${isActive ? 1 : 1.04})`,
+          cursor: hasRedirect ? "pointer" : "default",
+          textDecoration: "none", // prevent anchor underline styling
+          color: "inherit",
+        };
 
-          {/* Text overlay — commented out, can be enabled if needed */}
-          {/* <div className="absolute bottom-20 sm:bottom-24 md:bottom-28 left-0 right-0 px-6 sm:px-10 md:px-16 lg:px-24 text-center sm:text-left z-10 pointer-events-none">
-            <h2 className="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-2 md:mb-3 drop-shadow-lg leading-tight">
-              {banner.title || "Hero Title"}
-            </h2>
-            <p className="text-white/85 text-sm sm:text-base md:text-lg max-w-xs sm:max-w-sm md:max-w-xl mx-auto sm:mx-0 drop-shadow-md">
-              {banner.description || ""}
-            </p>
-          </div> */}
+        /* Inner content shared between <a> and <div> */
+        const slideContent = (
+          <>
+            {/* Media layer */}
+            {renderMedia(banner, isActive)}
 
-          {/* CTA button — centered */}
-          <div className="absolute bottom-16 sm:bottom-20 md:bottom-24 left-0 right-0 flex justify-center sm:justify-center px-6 sm:px-10 md:px-16 lg:px-24 z-10">
-            <button
-              onClick={() => navigate('/products')}
-              className="text-white text-sm sm:text-base font-medium underline underline-offset-4 hover:opacity-80 transition flex items-center gap-2 group"
-            >
-              <span>Shop Now</span>
-              <svg
-                className="w-4 h-4 transition-transform group-hover:translate-x-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10 pointer-events-none" />
+
+            {/* CTA button — centered */}
+            <div className="absolute bottom-16 sm:bottom-20 md:bottom-24 left-0 right-0 flex justify-center px-6 sm:px-10 md:px-16 lg:px-24 z-10">
+              <button
+                onClick={(e) => handleCtaClick(e, banner)}
+                className="text-white text-sm sm:text-base font-medium underline underline-offset-4 hover:opacity-80 transition flex items-center gap-2 group"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      ))}
+                <span>Shop Now</span>
+                <svg
+                  className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+          </>
+        );
 
-      {/* Prev arrow - only show if more than one banner */}
+        /* If redirectionLink exists, render an <a> so browser shows URL in status bar on hover */
+        if (hasRedirect) {
+          return (
+            <a
+              key={banner._id}
+              href={banner.redirectionLink}
+              className={slideClassName}
+              style={slideStyle}
+              onClick={(e) => {
+                if (index !== cur) return;
+                handleBannerClick(banner, e);
+              }}
+              aria-label={banner.title || "Hero banner link"}
+            >
+              {slideContent}
+            </a>
+          );
+        }
+
+        /* Otherwise keep the existing <div> behavior */
+        return (
+          <div
+            key={banner._id}
+            className={slideClassName}
+            style={slideStyle}
+            onClick={() => {
+              if (index !== cur) return;
+              handleBannerClick(banner);
+            }}
+          >
+            {slideContent}
+          </div>
+        );
+      })}
+
+      {/* Prev arrow */}
       {banners.length > 1 && (
         <button
-          onClick={prev}
+          onClick={(e) => { e.stopPropagation(); prev(); }}
           className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 text-white text-2xl md:text-3xl z-20 bg-black/30 hover:bg-black/55 rounded-full w-9 h-9 md:w-11 md:h-11 flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
           aria-label="Previous slide"
         >
@@ -312,10 +385,10 @@ const Carousel = ({ banners }) => {
         </button>
       )}
 
-      {/* Next arrow - only show if more than one banner */}
+      {/* Next arrow */}
       {banners.length > 1 && (
         <button
-          onClick={next}
+          onClick={(e) => { e.stopPropagation(); next(); }}
           className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 text-white text-2xl md:text-3xl z-20 bg-black/30 hover:bg-black/55 rounded-full w-9 h-9 md:w-11 md:h-11 flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
           aria-label="Next slide"
         >
@@ -323,13 +396,14 @@ const Carousel = ({ banners }) => {
         </button>
       )}
 
-      {/* Dots - only show if more than one banner */}
+      {/* Dots */}
       {banners.length > 1 && (
         <div className="absolute bottom-5 sm:bottom-7 left-0 right-0 flex justify-center gap-2 z-20">
           {banners.map((_, index) => (
             <button
               key={index}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 if (!isTransitioning) {
                   setIsTransitioning(true);
                   setCur(index);
@@ -365,29 +439,28 @@ export default function HeroBanner() {
       try {
         setLoading(true);
         const response = await fetch(HERO_API_ENDPOINT);
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const result = await response.json();
-        
+
         if (result.success && Array.isArray(result.data)) {
-          // Filter only active banners and sort by order
           const activeBanners = result.data
             .filter(banner => banner.isActive === true)
             .sort((a, b) => (a.order || 0) - (b.order || 0))
             .map(banner => ({
               ...banner,
-              // Ensure URL is absolute if needed
-              url: banner.url.startsWith('http') 
-                ? banner.url 
+              url: banner.url.startsWith('http')
+                ? banner.url
                 : `${API_BASE_URL}${banner.url}`,
-              // Add default title if not present
               title: banner.title || getDefaultTitle(banner.type),
               description: banner.description || getDefaultDescription(banner.type),
+              // Preserve redirectionLink (can be null)
+              redirectionLink: banner.redirectionLink || null,
             }));
-          
+
           setBanners(activeBanners);
         } else {
           throw new Error('Invalid API response structure');
@@ -395,7 +468,6 @@ export default function HeroBanner() {
       } catch (err) {
         console.error('Error fetching hero banners:', err);
         setError(err.message);
-        // Fallback to default banners if API fails
         setBanners(getDefaultBanners());
       } finally {
         setLoading(false);
@@ -433,6 +505,7 @@ export default function HeroBanner() {
         description: 'Discover the finest handcrafted styles made for you.',
         order: 0,
         isActive: true,
+        redirectionLink: null,
       },
       {
         _id: 'default-2',
@@ -442,6 +515,7 @@ export default function HeroBanner() {
         description: 'Watch how our artisans bring every piece to life.',
         order: 1,
         isActive: true,
+        redirectionLink: null,
       },
       {
         _id: 'default-3',
@@ -451,6 +525,7 @@ export default function HeroBanner() {
         description: 'A journey of fashion, culture, and craftsmanship.',
         order: 2,
         isActive: true,
+        redirectionLink: null,
       },
     ];
   };
@@ -475,8 +550,8 @@ export default function HeroBanner() {
           <div className="text-white text-center px-4">
             <p className="text-red-400 mb-2">Failed to load hero content</p>
             <p className="text-sm text-white/60">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="mt-4 px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition"
             >
               Retry

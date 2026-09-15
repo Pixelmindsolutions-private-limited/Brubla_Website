@@ -249,7 +249,6 @@ const SearchOverlay = ({ open, onClose }) => {
     const navigate = useNavigate();
     const debounceTimer = useRef(null);
 
-    // Load recent searches from localStorage
     useEffect(() => {
         const saved = localStorage.getItem("recentSearches");
         if (saved) {
@@ -261,7 +260,6 @@ const SearchOverlay = ({ open, onClose }) => {
         }
     }, []);
 
-    // Save recent search
     const saveRecentSearch = (searchTerm) => {
         if (!searchTerm.trim()) return;
         const updated = [searchTerm, ...recentSearches.filter(s => s !== searchTerm)].slice(0, 10);
@@ -269,13 +267,11 @@ const SearchOverlay = ({ open, onClose }) => {
         localStorage.setItem("recentSearches", JSON.stringify(updated));
     };
 
-    // Clear all recent searches
     const clearRecentSearches = () => {
         setRecentSearches([]);
         localStorage.removeItem("recentSearches");
     };
 
-    // Fetch search results from API
     const fetchSearchResults = async (searchQuery) => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
@@ -290,12 +286,11 @@ const SearchOverlay = ({ open, onClose }) => {
             const data = await response.json();
 
             if (data.success && data.products) {
-                // Fix image URLs
                 const fixedProducts = data.products.map(product => ({
                     ...product,
                     mainImage: product.mainImage?.replace("localhost:4077", "31.97.228.17:4077") || "/placeholder-image.jpg"
                 }));
-                setSearchResults(fixedProducts.slice(0, 5)); // Show top 5 results in overlay
+                setSearchResults(fixedProducts.slice(0, 5));
             } else {
                 setSearchResults([]);
             }
@@ -307,7 +302,6 @@ const SearchOverlay = ({ open, onClose }) => {
         }
     };
 
-    // Fetch suggestions as user types
     const fetchSuggestions = async (searchQuery) => {
         if (!searchQuery.trim()) {
             setSuggestions([]);
@@ -315,14 +309,12 @@ const SearchOverlay = ({ open, onClose }) => {
         }
 
         try {
-            // You can create a suggestions endpoint or use product names
             const response = await fetch(
                 `http://31.97.228.17:4077/api/users/search?q=${encodeURIComponent(searchQuery)}`
             );
             const data = await response.json();
 
             if (data.success && data.products) {
-                // Extract unique product names as suggestions
                 const uniqueNames = [...new Set(data.products.map(p => p.name))];
                 setSuggestions(uniqueNames.slice(0, 5));
             } else {
@@ -334,7 +326,6 @@ const SearchOverlay = ({ open, onClose }) => {
         }
     };
 
-    // Debounced search
     useEffect(() => {
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
@@ -386,15 +377,12 @@ const SearchOverlay = ({ open, onClose }) => {
         navigate(`/search?q=${encodeURIComponent(term)}`);
     };
 
-    // Filter suggestions based on input (for static suggestions)
     const filteredSuggestions = q.length > 0
         ? SUGGESTIONS.filter(s => s.label.toLowerCase().includes(q.toLowerCase()))
         : [];
 
-    // Get product suggestions from API
     const productSuggestions = suggestions.map(s => ({ label: s, tag: "Product" }));
 
-    // Combine static and dynamic suggestions
     const allSuggestions = [...filteredSuggestions, ...productSuggestions].slice(0, 8);
 
     return (
@@ -420,7 +408,6 @@ const SearchOverlay = ({ open, onClose }) => {
                     borderBottomRightRadius: "20px",
                 }}
             >
-                {/* Input row */}
                 <div
                     className="flex items-center gap-3 px-4 md:px-6 pt-5 pb-4"
                     style={{ borderBottom: "1px solid rgba(111,78,55,0.12)" }}
@@ -464,20 +451,15 @@ const SearchOverlay = ({ open, onClose }) => {
                     </div>
                 </div>
 
-                {/* Results */}
                 <div className="px-4 md:px-6 pb-6 max-h-[70vh] overflow-y-auto" style={{ scrollbarWidth: "none" }}>
                     {q.length > 0 ? (
                         <div className="pt-4">
-                            {/* Loading state */}
                             {loading && (
                                 <div className="flex items-center justify-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
                                 </div>
                             )}
 
-
-
-                            {/* Direct search option */}
                             {!loading && q.trim() && !allSuggestions.some(s => s.label.toLowerCase() === q.toLowerCase()) && (
                                 <button
                                     onClick={() => go(q.trim())}
@@ -500,7 +482,6 @@ const SearchOverlay = ({ open, onClose }) => {
                                 </button>
                             )}
 
-                            {/* Search Results Preview */}
                             {!loading && searchResults.length > 0 && (
                                 <div className="mt-4 pt-4 border-t border-[rgba(111,78,55,0.1)]">
                                     <p className="text-[9px] font-black uppercase tracking-widest mb-3 text-black">
@@ -558,7 +539,6 @@ const SearchOverlay = ({ open, onClose }) => {
                                 </div>
                             )}
 
-                            {/* No results */}
                             {!loading && allSuggestions.length === 0 && searchResults.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-10 gap-2">
                                     <SearchIcon c="w-10 h-10 opacity-20" />
@@ -579,7 +559,6 @@ const SearchOverlay = ({ open, onClose }) => {
                         </div>
                     ) : (
                         <>
-                            {/* Recent Searches */}
                             {recentSearches.length > 0 && (
                                 <div className="pt-5">
                                     <div className="flex items-center justify-between mb-2">
@@ -613,8 +592,6 @@ const SearchOverlay = ({ open, onClose }) => {
                                     </div>
                                 </div>
                             )}
-
-
                         </>
                     )}
                 </div>
@@ -818,7 +795,7 @@ const CollectionsPanel = ({ show, onMouseEnter, onMouseLeave, navbarHeight }) =>
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MEGA MENU PANEL — dynamic from /api/users/menu
+// MEGA MENU PANEL
 // ─────────────────────────────────────────────────────────────────────────────
 const MegaMenuPanel = ({ show, onClose, navbarHeight }) => {
     const navigate = useNavigate();
@@ -896,7 +873,6 @@ const MegaMenuPanel = ({ show, onClose, navbarHeight }) => {
             }}
         >
             <div className="px-4 md:px-8 lg:px-12 py-7 relative">
-                {/* Close */}
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-5 w-9 h-9 flex items-center justify-center rounded-full bg-white border border-[rgba(111,78,55,0.2)] shadow hover:bg-[#ece5de] transition text-sm"
@@ -947,9 +923,7 @@ const MegaMenuPanel = ({ show, onClose, navbarHeight }) => {
                                                 color: activeSubIdx === i ? "#000" : "#333",
                                             }}
                                         >
-
                                             <span>{sub.name}</span>
-
                                         </button>
                                     ))}
                                 </div>
@@ -959,7 +933,6 @@ const MegaMenuPanel = ({ show, onClose, navbarHeight }) => {
                         </div>
 
                         {/* COL 3 — Colors */}
-                        {/* ── COL 3: Colors ── */}
                         <div>
                             <SectionLabel
                                 icon={<PaletteIcon c="w-3.5 h-3.5 text-[#7a6a5a]" />}
@@ -1005,8 +978,6 @@ const MegaMenuPanel = ({ show, onClose, navbarHeight }) => {
                             ) : (
                                 <p className="text-xs px-1" style={{ color: "#7a6a5a" }}>No sizes available</p>
                             )}
-
-
                         </div>
                     </div>
                 )}
@@ -1054,7 +1025,6 @@ const Sidebar = ({ open, onClose, navigate }) => {
                     boxShadow: open ? "8px 0 40px rgba(0,0,0,0.15)" : "none",
                 }}
             >
-                {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(111,78,55,0.12)" }}>
                     <div onClick={() => { navigate("/home"); onClose(); }} className="cursor-pointer flex items-center gap-2">
                         <img src="/logo2.png" className="h-10 w-10" alt="logo" onError={e => { e.target.style.display = "none"; }} />
@@ -1068,7 +1038,6 @@ const Sidebar = ({ open, onClose, navigate }) => {
                     </button>
                 </div>
 
-                {/* Links */}
                 <div className="flex-1 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: "none" }}>
                     <p className="text-[9px] font-black uppercase tracking-widest px-2 mb-2" style={{ color: "#7a6a5a" }}>Menu</p>
                     {SIDEBAR_LINKS.map(({ id, label, Icon, link, special }) => {
@@ -1102,7 +1071,6 @@ const Sidebar = ({ open, onClose, navigate }) => {
                     })}
                 </div>
 
-                {/* Footer */}
                 <div className="px-5 py-4" style={{ borderTop: "1px solid rgba(111,78,55,0.12)" }}>
                     <div
                         onClick={() => navigate("/profile")}
@@ -1147,6 +1115,20 @@ const CartBtn = ({ count }) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// WISHLIST BUTTON
+// ─────────────────────────────────────────────────────────────────────────────
+const WishlistBtn = () => (
+    <Link
+        to="/profile/wishlists"
+        className="relative p-2 rounded-full transition-colors hover:bg-black/5"
+        style={{ color: "#333" }}
+        aria-label="View wishlist"
+    >
+        <HeartIcon c="w-5 h-5" />
+    </Link>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // BRUBLA WORDMARK
 // ─────────────────────────────────────────────────────────────────────────────
 const BrublaWordmark = ({ onClick }) => (
@@ -1158,7 +1140,7 @@ const BrublaWordmark = ({ onClick }) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN HEADER — always white, no transparent logic
+// MAIN HEADER
 // ─────────────────────────────────────────────────────────────────────────────
 const Header = () => {
     const [notifVisible, setNotifVisible] = useState(true);
@@ -1173,7 +1155,6 @@ const Header = () => {
     const location = useLocation();
     const userId = getUserId();
 
-    // Track header height
     useEffect(() => {
         const update = () => { if (headerRef.current) setNavbarHeight(headerRef.current.offsetHeight); };
         update();
@@ -1183,7 +1164,6 @@ const Header = () => {
         return () => { window.removeEventListener("resize", update); ro.disconnect(); };
     }, [notifVisible]);
 
-    // Cart polling (5s)
     useEffect(() => {
         if (!userId) return;
         const fetchCart = () =>
@@ -1273,6 +1253,7 @@ const Header = () => {
                         <button onClick={openSearch} className="p-2 rounded-full transition-colors hover:bg-black/5" style={{ color: "#333" }}>
                             <SearchIcon c="w-5 h-5" />
                         </button>
+                        <WishlistBtn />
                         <CartBtn count={cartCount} />
                         <LocationSelector />
                         <button onClick={() => navigate("/profile")} className="p-2 rounded-full transition-colors hover:bg-black/5" style={{ color: "#333" }}>
@@ -1308,6 +1289,7 @@ const Header = () => {
                         <button onClick={openSearch} className="p-2 rounded-full transition-colors hover:bg-black/5" style={{ color: "#333" }}>
                             <SearchIcon c="w-5 h-5" />
                         </button>
+                        <WishlistBtn />
                         <CartBtn count={cartCount} />
                         <LocationSelector />
                     </div>

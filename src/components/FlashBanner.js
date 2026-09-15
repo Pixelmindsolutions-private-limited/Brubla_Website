@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 /* ─────────────────────────────
    API CONFIGURATION
@@ -41,80 +42,111 @@ const useCarousel = (count, autoMs) => {
    RESPONSIVE BANNER STRIP
 ───────────────────────────── */
 
-const BannerStrip = ({ banner }) => (
-  <div className="relative w-full h-full">
+const BannerStrip = ({ banner, onCtaClick }) => {
+  const hasRedirect = Boolean(banner.redirectionLink);
 
-    {/* IMAGE */}
-    <img
-      src={banner.image}
-      alt={banner.title}
-      className="absolute inset-0 w-full h-full "
-    />
+  /* Handle banner click: use redirectionLink if present */
+  const handleBannerClick = (e) => {
+    if (!hasRedirect) {
+      // No redirectionLink → prevent "#" navigation, do nothing
+      e.preventDefault();
+      return;
+    }
+    // If link is internal (starts with "/"), let router handle it
+    // For external URLs, allow the anchor's default behavior
+    if (banner.redirectionLink.startsWith("/")) {
+      e.preventDefault();
+      // Let the parent handle via a synthetic event or call navigate
+      // For simplicity, use window.location for both — but for SPA,
+      // we can dispatch a custom navigation
+      // (handled by parent via onClick prop if needed)
+    }
+    // External URLs: default anchor behavior opens them
+  };
 
-    {/* OVERLAY */}
-    <div className="absolute inset-0" style={{ background: banner.overlay || "rgba(12,12,12,0.55)" }} />
+  /* CTA click: stop propagation so it doesn't trigger the anchor */
+  const handleCtaClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onCtaClick();
+  };
 
-    {/* CONTENT */}
-    <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
+  return (
+    <a
+      href={banner.redirectionLink || "#"}
+      onClick={handleBannerClick}
+      className="relative w-full h-full block"
+      style={{ textDecoration: "none", color: "inherit" }}
+      aria-label={banner.title || "Banner"}
+    >
+      {/* IMAGE */}
+      <img
+        src={banner.image}
+        alt={banner.title}
+        className="absolute inset-0 w-full h-full "
+      />
 
-      {/* EYEBROW / TAG */}
-      {banner.tag && (
-        <span
-          className="text-[9px] sm:text-xs font-bold tracking-[0.2em] mb-1"
-          style={{ color: banner.tagColor || "#c4bdbd" }}
-        >
-          {banner.tag}
-        </span>
-      )}
+      {/* OVERLAY */}
+      <div className="absolute inset-0" style={{ background: banner.overlay || "rgba(12,12,12,0.55)" }} />
 
-      {/* TITLE */}
-      <h2 className="
-        text-white 
-        text-lg sm:text-xl md:text-2xl lg:text-3xl
-        font-bold 
-        mb-1 sm:mb-2
-      ">
-        {banner.title}
-      </h2>
+      {/* CONTENT */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
 
-      {/* SUBTITLE */}
-      {banner.subtitle && (
-        <p className="
-          text-white/70 
-          text-[10px] sm:text-xs md:text-sm
-          mb-2 sm:mb-3
-          max-w-xs md:max-w-md
+        {/* EYEBROW / TAG */}
+        {banner.tag && (
+          <span
+            className="text-[9px] sm:text-xs font-bold tracking-[0.2em] mb-1"
+            style={{ color: banner.tagColor || "#c4bdbd" }}
+          >
+            {banner.tag}
+          </span>
+        )}
+
+        {/* TITLE */}
+        <h2 className="
+          text-white 
+          text-lg sm:text-xl md:text-2xl lg:text-3xl
+          font-bold 
+          mb-1 sm:mb-2
         ">
-          {banner.subtitle}
-        </p>
-      )}
+          {banner.title}
+        </h2>
 
-      {/* CTA BUTTON */}
-      {banner.buttonText && (
-        <button
-          className="
+        {/* SUBTITLE */}
+        {banner.subtitle && (
+          <p className="
+            text-white/70 
             text-[10px] sm:text-xs md:text-sm
-            px-4 py-1.5 sm:px-5 sm:py-2
-            font-semibold
-            transition-all
-            hover:scale-105
-          "
-          style={{
-            background: banner.ctaColor || "#000",
-            color: banner.ctaTextColor || "#fff",
-          }}
-          onClick={() => {
-            if (banner.ctaLink) {
-              window.location.href = banner.ctaLink;
-            }
-          }}
-        >
-          {banner.buttonText}
-        </button>
-      )}
-    </div>
-  </div>
-);
+            mb-2 sm:mb-3
+            max-w-xs md:max-w-md
+          ">
+            {banner.subtitle}
+          </p>
+        )}
+
+        {/* CTA BUTTON */}
+        {banner.buttonText && (
+          <button
+            className="
+              text-[10px] sm:text-xs md:text-sm
+              px-4 py-1.5 sm:px-5 sm:py-2
+              font-semibold
+              transition-all
+              hover:scale-105
+            "
+            style={{
+              background: banner.ctaColor || "#000",
+              color: banner.ctaTextColor || "#fff",
+            }}
+            onClick={handleCtaClick}
+          >
+            {banner.buttonText}
+          </button>
+        )}
+      </div>
+    </a>
+  );
+};
 
 /* ─────────────────────────────
    MAIN COMPONENT
@@ -124,6 +156,8 @@ export default function FlashBanner() {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
 
   // Fetch banners from API
   useEffect(() => {
@@ -161,6 +195,8 @@ export default function FlashBanner() {
               title: banner.title || "Special Offer",
               subtitle: banner.subtitle || "Limited time offer",
               buttonText: banner.buttonText || "Shop Now",
+              // Preserve redirectionLink (can be null)
+              redirectionLink: banner.redirectionLink || null,
             }));
 
           setBanners(activeBanners);
@@ -221,6 +257,11 @@ export default function FlashBanner() {
   // Get accent color from current banner
   const accent = banners[cur]?.ctaColor || "#000";
 
+  /* CTA button always routes to /products */
+  const handleCtaClick = () => {
+    navigate("/products");
+  };
+
   if (loading) {
     return (
       <div
@@ -273,7 +314,7 @@ export default function FlashBanner() {
           className="absolute inset-0 transition-opacity duration-700"
           style={{ opacity: i === cur ? 1 : 0 }}
         >
-          <BannerStrip banner={b} />
+          <BannerStrip banner={b} onCtaClick={handleCtaClick} />
         </div>
       ))}
 
