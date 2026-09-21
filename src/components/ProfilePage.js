@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import SingleOrderModal from "../pages/SingleOrderModal";
 import Header from "./Header";
+import Footer from "./Footer";
 import axios from "axios";
 import { Wallet } from "lucide-react";
 
@@ -950,6 +951,7 @@ export default function ProfilePage() {
           />
         )}
       </div>
+      <Footer />
     </>
   );
 }

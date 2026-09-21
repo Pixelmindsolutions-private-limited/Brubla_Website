@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import SingleOrderModal from "./SingleOrderModal";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 import axios from "axios";
 
 // API Base URL
@@ -642,6 +643,7 @@ export default function MyOrders() {
           />
         )}
       </div>
+      <Footer />
     </>
   );
 }

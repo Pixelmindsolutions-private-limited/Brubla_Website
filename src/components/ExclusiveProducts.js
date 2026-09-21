@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CSS ANIMATIONS
@@ -303,6 +304,7 @@ export default function ExclusiveProductsPage() {
                 <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                 <div className="py-6 text-center px-4"><p className="text-[11px] font-semibold font-body text-white/25">All exclusive pieces are authenticated · Members-only pricing · Free delivery above ₹999</p></div>
             </div>
+            <Footer />
         </>
     );
 }

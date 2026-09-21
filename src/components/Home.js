@@ -7,6 +7,7 @@ import CollectionGrid from "./CollectionGrid";
 import UpcomingAndRadar, { DesignsOnRadar, UpcomingSection } from "./UpcommingAndRadar";
 import AdBanner from "./AdBanner";
 import AllCollections from "./AllCollections";
+import Footer from "./Footer";
 import { BannerSection } from "../pages/WeddingBanner"
 
 const Home = () => {
@@ -25,6 +26,7 @@ const Home = () => {
                 {/* <DesignsOnRadar /> */}
                 <AllCollections />
             </main>
+            <Footer/>
 
         </>
     );

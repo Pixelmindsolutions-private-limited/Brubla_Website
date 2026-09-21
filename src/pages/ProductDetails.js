@@ -6,6 +6,7 @@ import {
     MapPin, Calendar, CheckCircle, Minus, Plus, ChevronRight, X
 } from "lucide-react";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 import SizeGuideModal from "../views/SizeGuide";
 import axios from "axios";
 
@@ -1041,6 +1042,7 @@ export default function ProductDetails() {
             </div>
 
             <SizeGuideModal isOpen={isSizeOpen} onClose={() => setIsSizeOpen(false)} />
+            <Footer />
         </>
     );
 }

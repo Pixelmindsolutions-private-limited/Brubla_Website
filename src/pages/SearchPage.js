@@ -2,6 +2,7 @@ import { SearchIcon, ArrowLeft, X, SlidersHorizontal, ChevronDown } from "lucide
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const SearchResultsPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -523,6 +524,7 @@ const SearchResultsPage = () => {
                     </div>
                 </div>
             </div>
+            <Footer />
         </>
     );
 };

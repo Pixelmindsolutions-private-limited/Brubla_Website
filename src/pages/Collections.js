@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const COFFEE = "#1B1816";
 
@@ -415,6 +416,7 @@ export default function AllCollections() {
                     </div>
                 </div>
             </div>
+            <Footer />
         </>
     );
 }

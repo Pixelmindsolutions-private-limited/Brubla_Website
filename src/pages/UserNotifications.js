@@ -9,6 +9,7 @@ import {
   Copy, ThumbsUp, Award, X
 } from "lucide-react";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLES
@@ -799,6 +800,7 @@ export default function UserNotifications() {
           </div>
         )}
       </div>
+      <Footer />
     </>
   );
 }

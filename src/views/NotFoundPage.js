@@ -1,12 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Home, ArrowLeft, ShoppingBag, Package, Store } from "lucide-react";
-import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 export default function NotFoundPage() {
   return (
     <>
-      {/* <Header /> */}
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
         <div className="max-w-lg w-full text-center">
           {/* 404 Number */}
@@ -74,6 +73,7 @@ export default function NotFoundPage() {
           </p>
         </div>
       </div>
+      <Footer />
     </>
   );
 }

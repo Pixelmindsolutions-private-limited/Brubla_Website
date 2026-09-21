@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ICON PRIMITIVES
@@ -557,6 +558,7 @@ export default function JoinUs() {
                     background: radial-gradient(ellipse, rgba(255,255,255,0.02) 0%, transparent 70%);
                 }
             `}</style>
+            <Footer />
         </>
     );
 }

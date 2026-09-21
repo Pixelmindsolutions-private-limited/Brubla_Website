@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 import axios from "axios";
 
 const COFFEE = "#000";
@@ -1250,6 +1251,7 @@ export default function AllProducts() {
                     </div>
                 )}
             </div>
+            <Footer />
         </>
     );
 }
