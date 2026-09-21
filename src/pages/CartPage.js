@@ -10,6 +10,7 @@ import { FaCheckCircle, FaMapMarkerAlt, FaBuilding, FaHome } from "react-icons/f
 import { MdLocationOn } from "react-icons/md";
 import axios from "axios";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const COFFEE = "#000";
 

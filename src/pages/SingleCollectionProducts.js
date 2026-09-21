@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 import axios from "axios";
 import { Heart, ShoppingBag, Star, X, Loader2, CheckCircle, AlertCircle, ChevronDown, SlidersHorizontal } from "lucide-react";
 

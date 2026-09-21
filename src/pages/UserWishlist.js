@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 // API Base URL
 const API_BASE_URL = "http://31.97.228.17:4077/api";
@@ -925,6 +926,7 @@ export default function WishlistPage() {
           </div>
         )}
       </div>
+      <Footer />
     </>
   );
 }

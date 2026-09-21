@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Navbar from "./Navbar";
 import Header from "./Header";
+import Footer from "./Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PLAY STORE ICON (monochrome)
@@ -374,6 +375,7 @@ export default function ExclusivePage() {
 
                 <div className="w-full h-px bg-gradient-to-r from-transparent via-white to-transparent" />
             </div>
+            <Footer />
         </>
     );
 }

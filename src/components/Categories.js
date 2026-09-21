@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
+import Footer from "./Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FALLBACK DATA (if API fails)
@@ -234,6 +235,7 @@ export default function CategoriesGrid() {
                     </div>
                 )}
             </div>
+            <Footer />
         </>
     );
 }

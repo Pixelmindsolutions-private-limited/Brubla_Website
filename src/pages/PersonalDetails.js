@@ -7,6 +7,7 @@ import {
   Loader2, Smartphone, Award, Gift
 } from "lucide-react";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLES - Tailwind only with keyframes
@@ -288,6 +289,7 @@ export default function PersonalDetails() {
             <p className="text-gray-500 fs">Loading your profile...</p>
           </div>
         </div>
+        <Footer />
       </>
     );
   }
@@ -682,6 +684,7 @@ export default function PersonalDetails() {
           />
         )}
       </div>
+      <Footer />
     </>
   );
 }

@@ -7,6 +7,7 @@ import {
   Clock, Shield, Truck, CreditCard, Heart
 } from "lucide-react";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLES
@@ -837,6 +838,7 @@ export default function UserAddresses() {
           </div>
         )}
       </div>
+      <Footer />
     </>
   );
 }

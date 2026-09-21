@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Navbar from "./Navbar";
 import Header from "./Header";
+import Footer from "./Footer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLES
@@ -667,6 +668,7 @@ export default function SingleExclusiveProduct() {
                     </div>
                 </div>
             </div>
+            <Footer />
         </>
     );
 }
