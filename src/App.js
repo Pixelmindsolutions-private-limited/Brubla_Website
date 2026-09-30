@@ -27,6 +27,7 @@ import NotFoundPage from './views/NotFoundPage';
 import WishlistPage from './pages/UserWishlist';
 import SearchResultsPage from './pages/SearchPage';
 import UserWallet from './pages/UserWallet';
+import AllExclusiveProductsPage from './components/AllExclusiveProducts';
 
 /* =========================
    PRIVATE ROUTE COMPONENT
@@ -49,6 +50,7 @@ function App() {
         <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
         <Route path="/exclusive" element={<PrivateRoute><ExclusivePage /></PrivateRoute>} />
         <Route path="/exclusiveproducts" element={<PrivateRoute><ExclusiveProductsPage /></PrivateRoute>} />
+        <Route path="/all-exclusiveproducts" element={<PrivateRoute><AllExclusiveProductsPage /></PrivateRoute>} />
         <Route path="/exclusiveproducts/:id" element={<PrivateRoute><SingleExclusiveProduct /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
         <Route path="/category" element={<PrivateRoute><CategoriesGrid /></PrivateRoute>} />

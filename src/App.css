@@ -5,3 +5,12 @@
 .colorcode2 {
     color:#4E342E;
 }
+
+* {
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+}
+
+html,
+body {
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+}

@@ -478,7 +478,7 @@ export default function CategorySection() {
 
   return (
     <section
-      className="w-full p-10 md:py-12 bg-white overflow-hidden"
+      className="w-full py-10 md:py-12 bg-white overflow-hidden"
       aria-label="Shop by Category"
     >
       <style>{`
@@ -558,8 +558,8 @@ export default function CategorySection() {
               ref={trackRef}
               className="category-track flex gap-3 overflow-x-auto"
               style={{
-                paddingLeft: "clamp(16px,2vw,32px)",
-                paddingRight: "clamp(16px,2vw,32px)",
+                paddingLeft: isMobile ? "clamp(16px,2vw,32px)" : "clamp(16px,2vw,32px)",
+                paddingRight: isMobile ? "clamp(16px,2vw,32px)" : "clamp(16px,2vw,32px)",
                 paddingBottom: "8px",
                 scrollbarWidth: "none",
                 WebkitOverflowScrolling: "touch",

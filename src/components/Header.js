@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import {
+    useState,
+    useEffect,
+    useRef,
+    useCallback,
+    createContext,
+    useContext,
+} from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaDownload, FaQuestionCircle, FaAndroid, FaApple } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
@@ -78,8 +85,8 @@ const CITIES = [
 
 const SIDEBAR_LINKS = [
     { id: "home", label: "Home", Icon: HomeIcon, link: "/home" },
-    { id: "tailor", label: "Tailor", Icon: ScissorsIcon, link: "/exclusive" },
     { id: "exclusive", label: "Exclusive", Icon: GemIcon, link: "/exclusiveproducts", special: true },
+    { id: "tailor", label: "Tailor", Icon: ScissorsIcon, link: "/exclusive" },
     { id: "stylist", label: "AI Stylist", Icon: BrushIcon, link: "/exclusive" },
     { id: "designer", label: "Designer", Icon: HeartIcon, link: "/exclusive" },
     { id: "profile", label: "Profile", Icon: ProfileIcon, link: "/profile" },
@@ -106,6 +113,282 @@ const getUserId = () => {
 };
 
 const fixImageUrl = (url = "") => url.replace("http://localhost:4077", API_BASE);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BACKDROP BRIGHTNESS DETECTION
+// Works out how bright the page is right behind a screen rectangle (0 = black,
+// 1 = white). It reads real image pixels, and accounts for dark/light overlays.
+// Optional override: add data-nav-theme="light" | "dark" to any section.
+// ─────────────────────────────────────────────────────────────────────────────
+const parseRgb = (str) => {
+    const m = str && str.match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const [r, g, b, a = 1] = m[1].split(",").map(parseFloat);
+    return { r, g, b, a };
+};
+const lumOf = ({ r, g, b }) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+// Downscaled pixel copy of each image, cached. null = blocked (no CORS access).
+const pixelCache = new Map();
+const loadPixels = (url) => {
+    if (!pixelCache.has(url)) {
+        pixelCache.set(
+            url,
+            new Promise((resolve) => {
+                const im = new Image();
+                im.crossOrigin = "anonymous";
+                im.onload = () => {
+                    try {
+                        const w = 64;
+                        const h = Math.max(
+                            1,
+                            Math.round((64 * im.naturalHeight) / im.naturalWidth),
+                        );
+                        const cv = document.createElement("canvas");
+                        cv.width = w;
+                        cv.height = h;
+                        const ctx = cv.getContext("2d", { willReadFrequently: true });
+                        ctx.drawImage(im, 0, 0, w, h);
+                        ctx.getImageData(0, 0, 1, 1); // throws if the image is CORS-blocked
+                        resolve({ ctx, w, h, iw: im.naturalWidth, ih: im.naturalHeight });
+                    } catch {
+                        resolve(null);
+                    }
+                };
+                im.onerror = () => resolve(null);
+                im.src = url;
+            }),
+        );
+    }
+    return pixelCache.get(url);
+};
+
+const regionLum = (px, u0, v0, u1, v1) => {
+    const cl = (n) => Math.min(Math.max(n, 0), 1);
+    const x = Math.min(Math.floor(cl(u0) * px.w), px.w - 1);
+    const y = Math.min(Math.floor(cl(v0) * px.h), px.h - 1);
+    const w = Math.max(1, Math.min(px.w - x, Math.ceil(cl(u1) * px.w) - x));
+    const h = Math.max(1, Math.min(px.h - y, Math.ceil(cl(v1) * px.h) - y));
+    const d = px.ctx.getImageData(x, y, w, h).data;
+    let sum = 0;
+    for (let i = 0; i < d.length; i += 4)
+        sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    return sum / (d.length / 4) / 255;
+};
+
+// Brightness of an <img> or url() background under rectangle wr (assumes "cover")
+const imageLum = async (url, el, cs, wr, isBg) => {
+    if (!url) return null;
+    const px = await loadPixels(url);
+    if (!px) return 0.25; // can't read pixels → assume a dark photo
+    const er = el.getBoundingClientRect();
+    const s = Math.max(er.width / px.iw, er.height / px.ih);
+    const rw = px.iw * s;
+    const rh = px.ih * s;
+    const pos = (isBg ? cs.backgroundPosition : cs.objectPosition || "50% 50%")
+        .split(" ")
+        .map((v) => (isNaN(parseFloat(v)) ? 0.5 : parseFloat(v) / 100));
+    const ox = (er.width - rw) * (pos[0] ?? 0.5);
+    const oy = (er.height - rh) * (pos[1] ?? 0.5);
+    return regionLum(
+        px,
+        (wr.left - er.left - ox) / rw,
+        (wr.top - er.top - oy) / rh,
+        (wr.right - er.left - ox) / rw,
+        (wr.bottom - er.top - oy) / rh,
+    );
+};
+
+// Returns 0..1 brightness behind rectangle wr, ignoring the navbar itself
+const backdropLum = async (wr, skipEl) => {
+    const stack = document
+        .elementsFromPoint((wr.left + wr.right) / 2, (wr.top + wr.bottom) / 2)
+        .filter((el) => !(skipEl && skipEl.contains(el)));
+    if (!stack.length) return 1;
+
+    const hint = stack[0]
+        .closest("[data-nav-theme]")
+        ?.getAttribute("data-nav-theme");
+    if (hint === "dark") return 0;
+    if (hint === "light") return 1;
+
+    const overlays = []; // translucent layers above the real backdrop
+    let base = null;
+
+    for (const el of stack) {
+        const cs = getComputedStyle(el);
+        const bi = cs.backgroundImage;
+        const bg = parseRgb(cs.backgroundColor);
+
+        if (el.tagName === "IMG") {
+            base = await imageLum(el.currentSrc || el.src, el, cs, wr, false);
+        } else if (el.tagName === "VIDEO" || el.tagName === "CANVAS") {
+            base = 0.25;
+        } else if (bi && bi.startsWith("url(")) {
+            const url = (bi.match(/url\(["']?(.*?)["']?\)/) || [])[1];
+            base = await imageLum(url, el, cs, wr, true);
+        } else if (bi && bi !== "none") {
+            const cols = [...bi.matchAll(/rgba?\([^)]+\)/g)]
+                .map((m) => parseRgb(m[0]))
+                .filter((c) => c && c.a > 0.3);
+            if (cols.length)
+                base = cols.reduce((s, c) => s + lumOf(c), 0) / cols.length;
+        }
+        if (base !== null) break;
+
+        if (bg && bg.a > 0.02) {
+            if (bg.a >= 0.98) {
+                base = lumOf(bg);
+                break;
+            }
+            overlays.push({ a: bg.a, l: lumOf(bg) });
+        }
+    }
+
+    let l = base === null ? 1 : base; // nothing painted → the white page
+    for (let i = overlays.length - 1; i >= 0; i--)
+        l = overlays[i].a * overlays[i].l + (1 - overlays[i].a) * l;
+    return l;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED BACKDROP SCHEDULER
+// One scroll/resize/interval listener drives every navbar element, no matter
+// how many of them are measuring.
+// ─────────────────────────────────────────────────────────────────────────────
+const toneSubscribers = new Set();
+let toneRaf = 0;
+let toneTimer = 0;
+
+const runToneMeasurements = () => {
+    cancelAnimationFrame(toneRaf);
+    toneRaf = requestAnimationFrame(() => {
+        toneSubscribers.forEach((fn) => fn());
+    });
+};
+
+const subscribeTone = (fn) => {
+    if (toneSubscribers.size === 0) {
+        window.addEventListener("scroll", runToneMeasurements, { passive: true });
+        window.addEventListener("resize", runToneMeasurements);
+        toneTimer = setInterval(runToneMeasurements, 800); // late images / route changes
+    }
+    toneSubscribers.add(fn);
+    return () => {
+        toneSubscribers.delete(fn);
+        if (toneSubscribers.size === 0) {
+            window.removeEventListener("scroll", runToneMeasurements);
+            window.removeEventListener("resize", runToneMeasurements);
+            clearInterval(toneTimer);
+            cancelAnimationFrame(toneRaf);
+        }
+    };
+};
+
+// The header element is shared through context so every child can ignore it
+const HeaderRefContext = createContext(null);
+
+// Attach the returned ref to any element. `onDark` is true when the page
+// behind that element is dark (so the element should be white).
+const useBackdropTone = () => {
+    const ref = useRef(null);
+    const headerRef = useContext(HeaderRefContext);
+    const { pathname } = useLocation();
+    const [onDark, setOnDark] = useState(true);
+
+    useEffect(() => {
+        let ticket = 0;
+        const measure = async () => {
+            const el = ref.current;
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            if (rect.width === 0 && rect.height === 0) return; // hidden breakpoint
+            const mine = ++ticket;
+            const l = await backdropLum(rect, headerRef && headerRef.current);
+            if (mine !== ticket) return; // a newer measurement is already running
+            setOnDark(l < 0.55);
+        };
+        const unsubscribe = subscribeTone(measure);
+        measure();
+        return () => {
+            ticket++;
+            unsubscribe();
+        };
+    }, [headerRef, pathname]);
+
+    return [ref, onDark];
+};
+
+const fgFor = (onDark) => (onDark ? "#fff" : "#1a1a1a");
+
+const hoverBg = (onDark) =>
+    onDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.06)";
+
+// Generic navbar button/link that adapts to the backdrop.
+// `style` and `children` may be functions of `onDark`.
+// Your own onMouseEnter / onMouseLeave are merged with the hover tint.
+const NavBtn = ({
+    as: Tag = "button",
+    className = "p-2 rounded-full transition-colors",
+    style,
+    children,
+    noHover = false,
+    onMouseEnter,
+    onMouseLeave,
+    ...rest
+}) => {
+    const [ref, onDark] = useBackdropTone();
+    const extraStyle = typeof style === "function" ? style(onDark) : style;
+    return (
+        <Tag
+            ref={ref}
+            className={className}
+            style={{ color: fgFor(onDark), ...extraStyle }}
+            onMouseEnter={(e) => {
+                if (!noHover) e.currentTarget.style.background = hoverBg(onDark);
+                onMouseEnter && onMouseEnter(e);
+            }}
+            onMouseLeave={(e) => {
+                if (!noHover) e.currentTarget.style.background = "transparent";
+                onMouseLeave && onMouseLeave(e);
+            }}
+            {...rest}
+        >
+            {typeof children === "function" ? children(onDark) : children}
+        </Tag>
+    );
+};
+
+// Thin divider that adapts to the backdrop
+const NavDivider = () => {
+    const [ref, onDark] = useBackdropTone();
+    return (
+        <div
+            ref={ref}
+            className="w-px h-5 mx-1 flex-shrink-0 transition-colors duration-300"
+            style={{
+                background: onDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)",
+            }}
+        />
+    );
+};
+
+// Logo image; gets a white chip only when sitting on a dark backdrop
+const NavLogo = ({ onClick }) => {
+    const [ref, onDark] = useBackdropTone();
+    return (
+        <div ref={ref} onClick={onClick} className="cursor-pointer flex-shrink-0">
+            <img
+                src="/logo2.png"
+                className={`h-10 w-10 transition-colors duration-300 ${onDark ? "bg-white" : ""}`}
+                alt="logo"
+                onError={(e) => {
+                    e.target.style.display = "none";
+                }}
+            />
+        </div>
+    );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FLOATING JOIN BUTTON
@@ -193,13 +476,13 @@ const NotifBanner = ({ onClose }) => {
                     <FaDownload className="text-sm" />
                     <span className="hidden md:inline">Download App</span>
                 </button>
-                <button className="flex items-center gap-1 md:gap-2 text-[11px] md:text-xs font-medium text-white hover:opacity-80">
+                {/* <button className="flex items-center gap-1 md:gap-2 text-[11px] md:text-xs font-medium text-white hover:opacity-80">
                     <FaQuestionCircle className="text-sm" />
                     <span className="hidden md:inline">Help</span>
-                </button>
-                <button onClick={onClose} className="text-white opacity-40 hover:opacity-80 transition">
+                </button> */}
+                {/* <button onClick={onClose} className="text-white opacity-40 hover:opacity-80 transition">
                     <IoClose className="w-4 h-4" />
-                </button>
+                </button> */}
             </div>
         </div>
     );
@@ -601,7 +884,7 @@ const SearchOverlay = ({ open, onClose }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOCATION SELECTOR
+// LOCATION SELECTOR  (adapts to backdrop)
 // ─────────────────────────────────────────────────────────────────────────────
 const LocationSelector = () => {
     const [open, setOpen] = useState(false);
@@ -613,6 +896,7 @@ const LocationSelector = () => {
     const [gpsLabel, setGpsLbl] = useState(() => localStorage.getItem("gpsLocation") || null);
     const ref = useRef(null);
     const userId = getUserId();
+    const [btnRef, onDark] = useBackdropTone();
 
     useEffect(() => {
         if (!userId) return;
@@ -681,13 +965,19 @@ const LocationSelector = () => {
     return (
         <div className="relative" ref={ref}>
             <button
+                ref={btnRef}
                 onClick={() => setOpen(o => !o)}
-                className="relative p-2 rounded-full transition-colors hover:bg-black/5"
-                style={{ color: "#333" }}
+                className="relative p-2 rounded-full transition-colors"
+                style={{ color: fgFor(onDark) }}
                 aria-label="Change location"
+                onMouseEnter={(e) => { e.currentTarget.style.background = hoverBg(onDark); }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             >
                 <PinIcon c="w-5 h-5" />
-                <span className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-black" />
+                <span
+                    className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-full transition-colors duration-300"
+                    style={{ background: onDark ? "#fff" : "#000" }}
+                />
             </button>
 
             {open && (
@@ -889,7 +1179,7 @@ const MegaMenuPanel = ({ show, onClose, navbarHeight }) => {
 
                         {/* COL 1 — Categories */}
                         <div>
-                            <SectionLabel icon={<TagIcon c="w-3.5 h-3.5" style={{ color: "#7a6a5a" }} />} title="Categories" />
+                            <SectionLabel icon={<TagIcon c="w-3.5 h-3.5 text-[#7a6a5a]" />} title="Categories" />
                             <div className="space-y-1">
                                 {categories.map((cat, i) => (
                                     <button
@@ -910,7 +1200,7 @@ const MegaMenuPanel = ({ show, onClose, navbarHeight }) => {
 
                         {/* COL 2 — Subcategories */}
                         <div>
-                            <SectionLabel icon={<ChevRight c="w-3.5 h-3.5" style={{ color: "#7a6a5a" }} />} title="Subcategories" />
+                            <SectionLabel icon={<ChevRight c="w-3.5 h-3.5 text-[#7a6a5a]" />} title="Subcategories" />
                             {activeCat?.subcategories?.length ? (
                                 <div className="space-y-1">
                                     {activeCat.subcategories.map((sub, i) => (
@@ -968,7 +1258,7 @@ const MegaMenuPanel = ({ show, onClose, navbarHeight }) => {
 
                         {/* COL 4 — Sizes */}
                         <div>
-                            <SectionLabel icon={<RulerIcon c="w-3.5 h-3.5" style={{ color: "#7a6a5a" }} />} title="Sizes" />
+                            <SectionLabel icon={<RulerIcon c="w-3.5 h-3.5 text-[#7a6a5a]" />} title="Sizes" />
                             {sizes.length ? (
                                 <div className="flex flex-wrap gap-2">
                                     {sizes.map(size => (
@@ -1071,24 +1361,59 @@ const Sidebar = ({ open, onClose, navigate }) => {
                     })}
                 </div>
 
-                <div className="px-5 py-4" style={{ borderTop: "1px solid rgba(111,78,55,0.12)" }}>
-                    <div
-                        onClick={() => navigate("/profile")}
-                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
+                <div
+                    className="px-5 py-4"
+                    style={{ borderTop: "1px solid rgba(111,78,55,0.12)" }}
+                >
+                    <button
+                        onClick={() => {
+                            sessionStorage.removeItem("user");
+                            sessionStorage.removeItem("authToken");
+                            navigate("/");
+                            onClose();
+                        }}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors hover:bg-red-50"
                         style={{ background: "#f9f5f0" }}
                     >
                         <div
                             className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ background: "linear-gradient(135deg,#000,#1a1a1a)", border: "1px solid rgba(111,78,55,0.25)" }}
+                            style={{
+                                background: "linear-gradient(135deg,#000,#1a1a1a)",
+                                border: "1px solid rgba(111,78,55,0.25)",
+                            }}
                         >
-                            <ProfileIcon c="w-4 h-4 text-white" />
+                            <svg
+                                className="w-4 h-4 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7"
+                                />
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M13 20H6a2 2 0 01-2-2V6a2 2 0 012-2h7"
+                                />
+                            </svg>
                         </div>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-xs font-bold truncate text-black">My Account</span>
-                            <span className="text-[10px]" style={{ color: "#7a6a5a" }}>Sign in for best experience</span>
+
+                        <div className="flex flex-col items-start min-w-0">
+                            <span className="text-xs font-bold text-black">
+                                Sign Out
+                            </span>
+                            <span
+                                className="text-[10px]"
+                                style={{ color: "#7a6a5a" }}
+                            >
+                                Sign out of your account
+                            </span>
                         </div>
-                        <ChevRight c="w-4 h-4 ml-auto flex-shrink-0 opacity-40" />
-                    </div>
+                    </button>
                 </div>
             </aside>
         </>
@@ -1096,47 +1421,98 @@ const Sidebar = ({ open, onClose, navigate }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CART BUTTON
+// CART BUTTON  (adapts to backdrop)
 // ─────────────────────────────────────────────────────────────────────────────
 const CartBtn = ({ count }) => (
-    <Link
+    <NavBtn
+        as={Link}
         to="/mycart"
-        className="relative p-2 rounded-full transition-colors hover:bg-black/5"
-        style={{ color: "#333" }}
         aria-label="View cart"
+        className="relative p-2 rounded-full transition-colors"
     >
-        <CartIcon c="w-5 h-5" />
-        {count > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none shadow-sm bg-black text-white">
-                {count}
-            </span>
+        {(onDark) => (
+            <>
+                <CartIcon c="w-5 h-5" />
+                {count > 0 && (
+                    <span
+                        className="absolute -top-0.5 -right-0.5 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none shadow-sm transition-colors duration-300"
+                        style={{
+                            background: onDark ? "#fff" : "#000",
+                            color: onDark ? "#000" : "#fff",
+                        }}
+                    >
+                        {count}
+                    </span>
+                )}
+            </>
         )}
-    </Link>
+    </NavBtn>
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WISHLIST BUTTON
+// WISHLIST BUTTON  (adapts to backdrop)
 // ─────────────────────────────────────────────────────────────────────────────
 const WishlistBtn = () => (
-    <Link
+    <NavBtn
+        as={Link}
         to="/profile/wishlists"
-        className="relative p-2 rounded-full transition-colors hover:bg-black/5"
-        style={{ color: "#333" }}
         aria-label="View wishlist"
+        className="relative p-2 rounded-full transition-colors"
     >
         <HeartIcon c="w-5 h-5" />
-    </Link>
+    </NavBtn>
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BRUBLA WORDMARK
+// BRUBLA WORDMARK — black on light backgrounds, white on dark ones
 // ─────────────────────────────────────────────────────────────────────────────
-const BrublaWordmark = ({ onClick }) => (
-    <button onClick={onClick} className="flex flex-col items-center leading-none select-none cursor-pointer">
-        <span className="font-black uppercase tracking-[0.25em] text-black" style={{ fontSize: "22px", lineHeight: 1 }}>
-            BRUBLA
-        </span>
-    </button>
+const BrublaWordmark = ({ onClick }) => {
+    const [btnRef, onDark] = useBackdropTone();
+    return (
+        <button
+            ref={btnRef}
+            onClick={onClick}
+            className="flex flex-col items-center leading-none select-none cursor-pointer"
+        >
+            <span
+                className="font-black uppercase tracking-[0.25em] transition-colors duration-300"
+                style={{
+                    fontSize: "22px",
+                    lineHeight: 1,
+                    color: onDark ? "#fff" : "#000",
+                }}
+            >
+                BRUBLA
+            </span>
+        </button>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MENU TOGGLE PILL (desktop) — adapts to backdrop unless the mega menu is open
+// ─────────────────────────────────────────────────────────────────────────────
+const MenuToggle = ({ active, onClick }) => (
+    <NavBtn
+        noHover
+        onClick={onClick}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 ml-1"
+        style={(onDark) => ({
+            color: active ? "#fff" : fgFor(onDark),
+            background: active
+                ? "#000"
+                : onDark
+                    ? "rgba(255,255,255,0.15)"
+                    : "#f9f5f0",
+            border: active
+                ? "1px solid #000"
+                : onDark
+                    ? "1px solid rgba(255,255,255,0.25)"
+                    : "1px solid rgba(111,78,55,0.15)",
+        })}
+    >
+        <MenuIcon c="w-4 h-4" />
+        <span>Menu</span>
+    </NavBtn>
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1144,6 +1520,7 @@ const BrublaWordmark = ({ onClick }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 const Header = () => {
     const [notifVisible, setNotifVisible] = useState(true);
+    const [scrolled, setScrolled] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [showCollections, setShowCollections] = useState(false);
@@ -1155,6 +1532,15 @@ const Header = () => {
     const location = useLocation();
     const userId = getUserId();
 
+    // Scroll listener
+    useEffect(() => {
+        const fn = () => setScrolled(window.scrollY > 4);
+        fn();
+        window.addEventListener("scroll", fn, { passive: true });
+        return () => window.removeEventListener("scroll", fn);
+    }, []);
+
+    // Navbar height tracker
     useEffect(() => {
         const update = () => { if (headerRef.current) setNavbarHeight(headerRef.current.offsetHeight); };
         update();
@@ -1162,8 +1548,9 @@ const Header = () => {
         const ro = new ResizeObserver(update);
         if (headerRef.current) ro.observe(headerRef.current);
         return () => { window.removeEventListener("resize", update); ro.disconnect(); };
-    }, [notifVisible]);
+    }, [notifVisible, scrolled]);
 
+    // Cart count polling
     useEffect(() => {
         if (!userId) return;
         const fetchCart = () =>
@@ -1176,6 +1563,8 @@ const Header = () => {
         return () => clearInterval(id);
     }, [userId]);
 
+    const transparent = !scrolled && !sidebarOpen && !openMenu && !showCollections;
+
     const openSearch = useCallback(() => setSearchOpen(true), []);
     const closeSearch = useCallback(() => setSearchOpen(false), []);
     const openSidebar = useCallback(() => { setSidebarOpen(true); setShowCollections(false); setOpenMenu(false); }, []);
@@ -1185,7 +1574,7 @@ const Header = () => {
     const shouldHide = hideRoutes.some(r => location.pathname.startsWith(r));
 
     return (
-        <>
+        <HeaderRefContext.Provider value={headerRef}>
             <SearchOverlay open={searchOpen} onClose={closeSearch} />
             <Sidebar open={sidebarOpen} onClose={closeSidebar} navigate={navigate} />
             {!shouldHide && <FloatingJoinBtn />}
@@ -1206,11 +1595,15 @@ const Header = () => {
             {/* ── STICKY HEADER ── */}
             <header
                 ref={headerRef}
-                className="fixed top-0 left-0 right-0 z-[500]"
+                className="fixed top-0 left-0 right-0 z-[500] transition-all duration-300"
                 style={{
-                    background: "#fff",
-                    borderBottom: "1px solid rgba(111,78,55,0.12)",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                    background: "transparent",
+                    borderBottom: transparent ? "none" : "1px solid rgba(111,78,55,0.12)",
+                    boxShadow: transparent
+                        ? "none"
+                        : scrolled
+                            ? "0 4px 24px rgba(0,0,0,0.09)"
+                            : "0 1px 4px rgba(0,0,0,0.04)",
                 }}
             >
                 {notifVisible && <NotifBanner onClose={() => setNotifVisible(false)} />}
@@ -1222,27 +1615,21 @@ const Header = () => {
                 >
                     {/* LEFT */}
                     <div className="flex items-center gap-2">
-                        <div onClick={() => navigate("/home")} className="cursor-pointer flex-shrink-0">
-                            <img src="/logo2.png" className="h-10 w-10" alt="logo"
-                                onError={e => { e.target.style.display = "none"; }} />
-                        </div>
-                        <div className="w-px h-5 mx-1 flex-shrink-0" style={{ background: "rgba(111,78,55,0.2)" }} />
-                        <button
+                        <NavLogo onClick={() => navigate("/home")} />
+                        <NavDivider />
+                        <NavBtn
                             onClick={() => navigate("/exclusiveproducts")}
-                            className="flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-[#333] transition-all duration-150"
-                            onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.06)"}
-                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                            className="flex items-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-150"
                         >
                             Exclusive
-                        </button>
-                        <button
+                        </NavBtn>
+                        <NavBtn
                             onMouseEnter={() => { setShowCollections(true); setOpenMenu(false); }}
                             className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-150"
-                            style={{ color: showCollections ? "#000" : "#333" }}
                         >
                             Collections
                             <ChevDown c={`w-3 h-3 transition-transform duration-200 ${showCollections ? "rotate-180" : ""}`} />
-                        </button>
+                        </NavBtn>
                     </div>
 
                     {/* CENTER */}
@@ -1250,45 +1637,39 @@ const Header = () => {
 
                     {/* RIGHT */}
                     <div className="flex items-center justify-end gap-0.5">
-                        <button onClick={openSearch} className="p-2 rounded-full transition-colors hover:bg-black/5" style={{ color: "#333" }}>
+                        <NavBtn onClick={openSearch} aria-label="Search">
                             <SearchIcon c="w-5 h-5" />
-                        </button>
+                        </NavBtn>
                         <WishlistBtn />
                         <CartBtn count={cartCount} />
                         <LocationSelector />
-                        <button onClick={() => navigate("/profile")} className="p-2 rounded-full transition-colors hover:bg-black/5" style={{ color: "#333" }}>
+                        <NavBtn onClick={() => navigate("/profile")} aria-label="Profile">
                             <ProfileIcon c="w-5 h-5" />
-                        </button>
-                        <button
+                        </NavBtn>
+                        <MenuToggle
+                            active={openMenu}
                             onClick={() => { setOpenMenu(o => !o); setShowCollections(false); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 ml-1"
-                            style={{
-                                color: openMenu ? "#fff" : "#333",
-                                background: openMenu ? "#000" : "#f9f5f0",
-                                border: "1px solid rgba(111,78,55,0.15)",
-                            }}
-                        >
-                            <MenuIcon c="w-4 h-4" />
-                            <span>Menu</span>
-                        </button>
+                        />
                     </div>
                 </div>
 
                 {/* ── MOBILE ── */}
                 <div className="lg:hidden flex items-center gap-2 px-3 md:px-5 h-14">
-                    <button onClick={openSidebar} className="p-2 rounded-full transition-colors hover:bg-black/5 flex-shrink-0" style={{ color: "#333" }}>
+                    <NavBtn
+                        onClick={openSidebar}
+                        className="p-2 rounded-full transition-colors flex-shrink-0"
+                        aria-label="Open menu"
+                    >
                         <MenuIcon c="w-5 h-5" />
-                    </button>
-                    <div onClick={() => navigate("/home")} className="cursor-pointer flex-shrink-0">
-                        <img src="/logo2.png" className="h-10 w-10" alt="logo" onError={e => { e.target.style.display = "none"; }} />
-                    </div>
+                    </NavBtn>
+                    <NavLogo onClick={() => navigate("/home")} />
                     <div className="flex-1 flex justify-center">
                         <BrublaWordmark onClick={() => navigate("/home")} />
                     </div>
                     <div className="flex items-center">
-                        <button onClick={openSearch} className="p-2 rounded-full transition-colors hover:bg-black/5" style={{ color: "#333" }}>
+                        <NavBtn onClick={openSearch} aria-label="Search">
                             <SearchIcon c="w-5 h-5" />
-                        </button>
+                        </NavBtn>
                         <WishlistBtn />
                         <CartBtn count={cartCount} />
                         <LocationSelector />
@@ -1315,9 +1696,11 @@ const Header = () => {
                 </div>
             </header>
 
-            {/* Spacer */}
-            <div style={{ height: `${navbarHeight}px` }} />
-        </>
+            {/* Spacer — only once the header stops floating over the hero */}
+            {/* {!transparent && <div style={{ height: `${navbarHeight}px` }} />} */}
+            {/* Spacer — always reserves the header's height so page content starts below it */}
+            <div data-nav-theme="light" style={{ height: `${navbarHeight}px` }} />
+        </HeaderRefContext.Provider>
     );
 };
 

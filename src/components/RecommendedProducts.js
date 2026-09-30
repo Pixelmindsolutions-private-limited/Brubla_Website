@@ -487,7 +487,7 @@ export default function RecommendedProducts() {
   }
 
   return (
-    <section className="w-full p-10 md:py-12 bg-white overflow-hidden" aria-label="Recommended Products">
+    <section className="w-full py-10 md:py-12 bg-white overflow-hidden" aria-label="Recommended Products">
       <style>{`
         .prod-track::-webkit-scrollbar { display: none; }
         @keyframes fadeInUp {

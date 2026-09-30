@@ -73,7 +73,7 @@ export default function NotFoundPage() {
           </p>
         </div>
       </div>
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 }

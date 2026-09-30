@@ -75,11 +75,11 @@ const VariantSelectionModal = ({ isOpen, onClose, product, onConfirm, addingToCa
     setStockError(null);
     try {
       const response = await axios.get(`${API_BASE}/api/admin/products/${product._id}`);
-      
+
       if (response.data.success && response.data.product) {
         const prod = response.data.product;
         setProductData(prod);
-        
+
         if (prod.variants && prod.variants.length > 0) {
           const firstVariant = prod.variants[0];
           setSelectedVariant(firstVariant);
@@ -136,7 +136,7 @@ const VariantSelectionModal = ({ isOpen, onClose, product, onConfirm, addingToCa
       alert(`Only ${selectedSize.stock} items available in stock`);
       return;
     }
-    
+
     onConfirm({
       variantId: selectedVariant._id,
       sizeId: selectedSize?._id || null,
@@ -161,7 +161,7 @@ const VariantSelectionModal = ({ isOpen, onClose, product, onConfirm, addingToCa
     return product?.displayActualPrice || 0;
   };
 
-  const discountPercent = getActualPrice() > getPrice() 
+  const discountPercent = getActualPrice() > getPrice()
     ? Math.round(((getActualPrice() - getPrice()) / getActualPrice()) * 100)
     : 0;
 
@@ -183,8 +183,8 @@ const VariantSelectionModal = ({ isOpen, onClose, product, onConfirm, addingToCa
         <div className="p-4 space-y-4">
           {productData?.mainImages?.[0] && (
             <div className="flex justify-center">
-              <img 
-                src={normaliseUrl(productData.mainImages[0])} 
+              <img
+                src={normaliseUrl(productData.mainImages[0])}
                 alt={product?.name}
                 className="w-24 h-24 rounded-lg object-cover border border-gray-200"
               />
@@ -205,11 +205,10 @@ const VariantSelectionModal = ({ isOpen, onClose, product, onConfirm, addingToCa
                       <button
                         key={variant._id}
                         onClick={() => handleVariantSelect(variant)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                          selectedVariant?._id === variant._id
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedVariant?._id === variant._id
                             ? "bg-black text-white shadow-md"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                          }`}
                       >
                         {variant.color}
                       </button>
@@ -227,13 +226,12 @@ const VariantSelectionModal = ({ isOpen, onClose, product, onConfirm, addingToCa
                         key={size._id}
                         onClick={() => handleSizeSelect(size)}
                         disabled={size.stock === 0}
-                        className={`relative min-w-[52px] py-2 rounded-lg text-sm font-medium transition-all ${
-                          selectedSize?._id === size._id
+                        className={`relative min-w-[52px] py-2 rounded-lg text-sm font-medium transition-all ${selectedSize?._id === size._id
                             ? "bg-black text-white"
                             : size.stock === 0
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed line-through"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed line-through"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
                       >
                         {size.size}
                         {size.stock === 0 && (
@@ -565,13 +563,13 @@ function ProductCard({ product, isWishlisted, onWishlistToggle, wishlist, onAddT
               const lower = c.toLowerCase();
               const bg = lower === "white" ? "#f9fafb"
                 : lower === "black" ? "#111"
-                : lower === "red" ? "#ef4444"
-                : lower === "blue" ? "#3b82f6"
-                : lower === "green" ? "#22c55e"
-                : lower === "yellow" ? "#eab308"
-                : lower === "pink" ? "#ec4899"
-                : lower === "gray" || lower === "grey" ? "#9ca3af"
-                : "#d1d5db";
+                  : lower === "red" ? "#ef4444"
+                    : lower === "blue" ? "#3b82f6"
+                      : lower === "green" ? "#22c55e"
+                        : lower === "yellow" ? "#eab308"
+                          : lower === "pink" ? "#ec4899"
+                            : lower === "gray" || lower === "grey" ? "#9ca3af"
+                              : "#d1d5db";
               return (
                 <span key={c} title={c}
                   className="w-3 h-3 rounded-full border border-gray-200 flex-shrink-0"
@@ -658,12 +656,12 @@ function ProductListItem({ product, isWishlisted, onWishlistToggle, wishlist, on
                 const lower = c.toLowerCase();
                 const bg = lower === "white" ? "#f3f4f6"
                   : lower === "black" ? "#111"
-                  : lower === "red" ? "#ef4444"
-                  : lower === "blue" ? "#3b82f6"
-                  : lower === "green" ? "#22c55e"
-                  : lower === "yellow" ? "#eab308"
-                  : lower === "pink" ? "#ec4899"
-                  : "#d1d5db";
+                    : lower === "red" ? "#ef4444"
+                      : lower === "blue" ? "#3b82f6"
+                        : lower === "green" ? "#22c55e"
+                          : lower === "yellow" ? "#eab308"
+                            : lower === "pink" ? "#ec4899"
+                              : "#d1d5db";
                 return (
                   <span key={c} title={c}
                     className="w-3.5 h-3.5 rounded-full border border-gray-200"
@@ -845,7 +843,7 @@ export default function SubCategoryProductsPage() {
   const [selectedFilters, setSelectedFilters] = useState({ priceRange: null, minRating: null, inStockOnly: false });
   const [wishlist, setWishlist] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
-  
+
   // Cart modal state
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -941,7 +939,7 @@ export default function SubCategoryProductsPage() {
 
   const addToCartWithVariant = async (product, variantData) => {
     if (!userId) return;
-    
+
     setAddingToCart(true);
     try {
       const response = await axios.post(`${API_BASE}/api/users/cart/${userId}/add`, {
@@ -950,7 +948,7 @@ export default function SubCategoryProductsPage() {
         sizeId: variantData.sizeId,
         quantity: variantData.quantity
       });
-      
+
       if (response.data.success) {
         showToast(`Added ${variantData.quantity} item(s) to cart!`, "success");
         setShowVariantModal(false);
@@ -1030,13 +1028,29 @@ export default function SubCategoryProductsPage() {
             </button>
 
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div>
-                {catTitle && (
-                  <p className="text-[11px] text-white/50 uppercase tracking-widest font-medium mb-2">{catTitle}</p>
+              <div className="min-w-0">
+                {catTitle ? (
+                  <>
+                    {/* Category: highlighted main heading */}
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-tight bg-white bg-clip-text text-transparent">
+                      {catTitle}
+                    </h1>
+
+                    {/* Subcategory: sits below the category */}
+                    <div className="mt-3 flex items-center gap-3">
+                      <span className="h-px w-8 bg-white/35 flex-shrink-0" />
+                      <h2 className="text-lg sm:text-xl md:text-2xl font-medium text-white/35 leading-snug">
+                        {pageTitle}
+                      </h2>
+                    </div>
+                  </>
+                ) : (
+                  // No category available: show the page title as the main heading
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-tight">
+                    {pageTitle}
+                  </h1>
                 )}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight leading-none">
-                  {pageTitle}
-                </h1>
+
                 <p className="mt-3 text-white/60 text-sm max-w-xl">
                   Explore our curated collection of {pageTitle.toLowerCase()} — quality craftsmanship at unbeatable prices.
                 </p>
@@ -1170,9 +1184,8 @@ export default function SubCategoryProductsPage() {
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-scaleIn">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg ${
-            toast.type === "success" ? "bg-black text-white" : "bg-red-500 text-white"
-          }`}>
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg ${toast.type === "success" ? "bg-black text-white" : "bg-red-500 text-white"
+            }`}>
             {toast.type === "success" ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
             <p className="text-sm font-medium">{toast.message}</p>
             <button onClick={() => setToast(null)} className="opacity-70 hover:opacity-100">
