@@ -14,19 +14,19 @@ const Home = () => {
     return (
         <>
             <Navbar />
-            <main className="pb-[70px] pt-[40px] lg:pb-0">
+            <main className="pt-[40px] lg:pb-0">
                 <HeroBanneer />
                 <CategorySection />
                 <FlashBanner />
                 <RecommendedProducts />
                 <CollectionGrid />
                 <UpcomingSection />
-                <BannerSection/>
+                <BannerSection />
                 {/* <AdBanner /> */}
                 {/* <DesignsOnRadar /> */}
                 <AllCollections />
             </main>
-            <Footer/>
+            <Footer />
 
         </>
     );

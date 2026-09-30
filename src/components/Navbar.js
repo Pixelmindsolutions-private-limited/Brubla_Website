@@ -2043,12 +2043,13 @@ const Navbar = () => {
             background: "transparent",
             borderBottom: transparent
               ? "none"
-              : "1px solid rgba(111,78,55,0.12)",
-            boxShadow: transparent
-              ? "none"
-              : scrolled
-                ? "0 4px 24px rgba(0,0,0,0.09)"
-                : "0 1px 4px rgba(0,0,0,0.04)",
+              : "none",
+              // : "1px solid rgba(111,78,55,0.12)",
+            boxShadow: "none",
+              // ? "none"
+              // : scrolled
+              //   ? "0 1px 4px rgba(0,0,0,0.04)"
+              //   : "0 1px 4px rgba(0,0,0,0.04)",
           }}
         >
           {/* DESKTOP */}

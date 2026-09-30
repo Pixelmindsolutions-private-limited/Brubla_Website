@@ -886,7 +886,7 @@ export default function ProfilePage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen fs pb-20 sm:pb-24 lg:pb-12 bg-gray-50">
+      <div className="min-h-screen fs sm:pb-24 lg:pb-12 bg-gray-50">
         <Styles />
 
         <ProfileHero user={user} userId={userId} fetchUserData={fetchUserData} loading={loading} />

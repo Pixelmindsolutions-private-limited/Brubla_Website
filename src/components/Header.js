@@ -1598,12 +1598,14 @@ const Header = () => {
                 className="fixed top-0 left-0 right-0 z-[500] transition-all duration-300"
                 style={{
                     background: "transparent",
-                    borderBottom: transparent ? "none" : "1px solid rgba(111,78,55,0.12)",
-                    boxShadow: transparent
-                        ? "none"
-                        : scrolled
-                            ? "0 4px 24px rgba(0,0,0,0.09)"
-                            : "0 1px 4px rgba(0,0,0,0.04)",
+                    borderBottom: transparent ? "none"
+                        : "none",
+                    // : "1px solid rgba(111,78,55,0.12)",
+                    boxShadow: "none",
+                    // ? "none"
+                    // : scrolled
+                    //     ? "0 4px 24px rgba(0,0,0,0.09)"
+                    //     : "0 1px 4px rgba(0,0,0,0.04)",
                 }}
             >
                 {notifVisible && <NotifBanner onClose={() => setNotifVisible(false)} />}
