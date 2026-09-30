@@ -99,7 +99,7 @@ const ProductCard = ({ product, index, onWishlistToggle, isWishlisted, showToast
     }
     
     if (productImages.length === 0) {
-      productImages.push("https://placehold.co/600x800/e5e7eb/64748b?text=No+Image");
+      productImages.push("https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA");
     }
     
     setImages([...new Set(productImages)]);

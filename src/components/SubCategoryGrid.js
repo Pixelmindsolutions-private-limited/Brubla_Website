@@ -247,7 +247,7 @@ export default function SubCategoriesGrid() {
                     draggable={false}
                     onError={(e) => {
                       e.target.src =
-                        "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image";
+                        "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA";
                     }}
                   />
                 </div>

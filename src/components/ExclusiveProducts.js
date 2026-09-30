@@ -336,10 +336,11 @@ const SPOTLIGHT_COPY = [
 ];
 
 const StackCard = ({ p, i, copy, cardRef }) => {
+    const navigate = useNavigate();
     const flip = i % 2 === 1;
     return (
         <div ref={cardRef} className="sticky" style={{ top: STACK_TOP + i * STACK_STEP, marginBottom: 56, zIndex: i + 1 }}>
-            <div data-inner className="rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_-24px_60px_rgba(0,0,0,0.7)] will-change-transform"
+            <div onClick={() => navigate(`/exclusiveproducts/${p.id}`)} data-inner className="rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_-24px_60px_rgba(0,0,0,0.7)] will-change-transform"
                 style={{ transformOrigin: "50% 0%" }}>
                 <div className={`flex flex-col ${flip ? "md:flex-row-reverse" : "md:flex-row"}`}>
                     <div className="relative overflow-hidden md:w-2/5 h-[280px] md:h-auto md:min-h-[400px]">

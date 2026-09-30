@@ -783,7 +783,7 @@ const SearchOverlay = ({ open, onClose }) => {
                                                         alt={product.name}
                                                         className="w-full h-full object-cover"
                                                         onError={(e) => {
-                                                            e.target.src = "https://via.placeholder.com/48x48?text=No+Image";
+                                                            e.target.src = "https://via.placeholder.com/48x48?text=BRUBLA";
                                                         }}
                                                     />
                                                 </div>

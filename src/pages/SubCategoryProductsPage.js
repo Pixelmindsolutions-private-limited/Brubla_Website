@@ -27,7 +27,7 @@ const getProductImage = (product) => {
     if (v.mainImage) return normaliseUrl(v.mainImage);
     if (Array.isArray(v.images) && v.images.length > 0) return normaliseUrl(v.images[0]);
   }
-  return "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image";
+  return "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA";
 };
 
 // ─── Discount % ───────────────────────────────────────────────────────────────
@@ -450,7 +450,7 @@ function ProductCard({ product, isWishlisted, onWishlistToggle, wishlist, onAddT
       }
     }
     const unique = [...new Set(images.filter(Boolean))];
-    return unique.length > 0 ? unique : ["https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"];
+    return unique.length > 0 ? unique : ["https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"];
   }, [product]);
 
   useEffect(() => {
@@ -476,7 +476,7 @@ function ProductCard({ product, isWishlisted, onWishlistToggle, wishlist, onAddT
           alt={product.name}
           className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
           onError={(e) => {
-            e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image";
+            e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA";
           }}
         />
 
@@ -601,7 +601,7 @@ function ProductListItem({ product, isWishlisted, onWishlistToggle, wishlist, on
       <div className="relative w-24 sm:w-28 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50" style={{ aspectRatio: "3/4" }}>
         <img src={img} alt={product.name}
           className="w-full h-full object-cover"
-          onError={(e) => { e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"; }} />
+          onError={(e) => { e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"; }} />
         {!inStock && (
           <div className="absolute inset-0 bg-white/75 flex items-center justify-center">
             <span className="text-[8px] font-semibold text-gray-500 text-center leading-tight px-1">Sold Out</span>

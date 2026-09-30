@@ -36,7 +36,7 @@ const getProductImage = (product) => {
     if (product.mainImages && product.mainImages.length > 0) {
         return normaliseUrl(product.mainImages[0]);
     }
-    return "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image";
+    return "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA";
 };
 
 const getUniqueSizesFromProducts = (products) => {
@@ -448,7 +448,7 @@ function ProductCard({ onClick, product, onAddToCart }) {
     productImages = productImages.map((img) => normaliseUrl(img));
 
     if (productImages.length === 0) {
-        productImages = ["https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"];
+        productImages = ["https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"];
     }
 
     // Auto slide
@@ -507,7 +507,7 @@ function ProductCard({ onClick, product, onAddToCart }) {
                     alt={product.name}
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
                     onError={(e) => {
-                        e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image";
+                        e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA";
                     }}
                 />
 

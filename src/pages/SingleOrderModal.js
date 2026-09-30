@@ -261,10 +261,10 @@ const SingleOrderModal = ({ order: propOrder, orderId, userId, onClose }) => {
                 <div key={item._id || idx} className="flex gap-3 sm:gap-4 p-2.5 sm:p-3 bg-gray-50 rounded-xl border border-gray-100">
                   <div className="w-14 h-16 sm:w-16 sm:h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
                     <img
-                      src={item.variant?.mainImage || "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"}
+                      src={item.variant?.mainImage || "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"}
                       alt={item.productName}
                       className="w-full h-full object-cover"
-                      onError={(e) => e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"}
+                      onError={(e) => e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"}
                     />
                   </div>
                   <div className="flex-1 min-w-0">

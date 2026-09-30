@@ -585,7 +585,7 @@ const ProductCard = ({ product, index, wishlist, onWishlistToggle, onAddToCart }
       });
     }
     if (images.length === 0) {
-      images.push("https://placehold.co/600x800/e5e7eb/64748b?text=No+Image");
+      images.push("https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA");
     }
     return [...new Set(images)];
   };

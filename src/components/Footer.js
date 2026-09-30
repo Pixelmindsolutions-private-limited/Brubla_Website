@@ -23,7 +23,7 @@ const footerColumns = [
     links: [
       { label: "About Us", to: "/home" },
       { label: "Collections", to: "/collections" },
-      { label: "Wedding Edit", to: "/wedding" },
+      // { label: "Wedding Edit", to: "/wedding" },
       { label: "Join Us", to: "/joinUs" },
     ],
   },
@@ -41,7 +41,6 @@ const footerColumns = [
     links: [
       { label: "Contact Us", to: "/home" },
       { label: "Track Order", to: "/profile/my-orders" },
-      { label: "Help Center", to: "/home" },
       { label: "FAQs", to: "/home" },
     ],
   },

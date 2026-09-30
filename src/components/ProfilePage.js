@@ -572,10 +572,16 @@ const OrderCard = ({ order, onClick }) => {
       <div className="rounded-lg sm:rounded-xl overflow-hidden flex-shrink-0 bg-gray-100"
         style={{ width: "48px", height: "60px" }}>
         <img
-          src={item?.variant?.mainImage || "https://placehold.co/300x400/e5e7eb/64748b?text=No+Image"}
+          src={item?.variant?.mainImage}
           alt="Product"
           className="w-full h-full object-cover object-top"
-          loading="lazy" draggable={false} />
+          loading="lazy"
+          draggable={false}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = "https://placehold.co/300x400/e5e7eb/64748b?text=BRUBLA";
+          }}
+        />
       </div>
 
       <div className="flex-1 min-w-0">

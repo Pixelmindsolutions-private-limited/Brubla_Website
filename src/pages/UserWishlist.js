@@ -367,7 +367,7 @@ const WishlistCard = ({ item, onRemove, onMoveToCart, isRemoving }) => {
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
         <img
-          src={!imgError && item.mainImage ? item.mainImage : "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"}
+          src={!imgError && item.mainImage ? item.mainImage : "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"}
           alt={item.productName}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={() => setImgError(true)}
@@ -481,7 +481,7 @@ const WishlistRow = ({ item, onRemove, onMoveToCart, isRemoving }) => {
       {/* Product Image */}
       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
         <img
-          src={!imgError && item.mainImage ? item.mainImage : "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"}
+          src={!imgError && item.mainImage ? item.mainImage : "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"}
           alt={item.productName}
           className="w-full h-full object-cover"
           onError={() => setImgError(true)}

@@ -448,7 +448,7 @@ const SearchResultsPage = () => {
                                                     alt={product.name}
                                                     className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
                                                     onError={(e) => {
-                                                        e.target.src = 'https://placehold.co/600x800/e5e7eb/64748b?text=No+Image';
+                                                        e.target.src = 'https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA';
                                                     }}
                                                 />
                                             </div>

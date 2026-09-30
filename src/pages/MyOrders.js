@@ -134,9 +134,13 @@ const OrderCard = ({ order, onClick }) => {
         <div className="flex gap-3">
           <div className="w-14 h-16 sm:w-16 sm:h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
             <img
-              src={order.items[0]?.variant?.mainImage || "https://via.placeholder.com/80x100/f3f4f6/9ca3af?text=Product"}
+              src={order.items[0]?.variant?.mainImage}
               alt={order.items[0]?.productName || "Product"}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "https://placehold.co/40x48/f3f4f6/9ca3af?text=BRUBLA";
+              }}
             />
           </div>
           <div className="flex-1 min-w-0">

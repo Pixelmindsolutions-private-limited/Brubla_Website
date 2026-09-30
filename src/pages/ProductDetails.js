@@ -136,7 +136,7 @@ const MobileGallery = ({ images, productName, currentStock, tags, discount }) =>
     const prev = () => go(idx - 1);
     const next = () => go(idx + 1);
 
-    const src = images[idx] || "https://placehold.co/800x800/e5e7eb/64748b?text=No+Image";
+    const src = images[idx] || "https://placehold.co/800x800/e5e7eb/64748b?text=BRUBLA";
 
     return (
         <>
@@ -146,7 +146,7 @@ const MobileGallery = ({ images, productName, currentStock, tags, discount }) =>
                         src={src}
                         alt={`${productName} ${idx + 1}`}
                         className="w-full h-full object-cover"
-                        onError={(e) => { e.target.src = "https://placehold.co/800x800/e5e7eb/64748b?text=No+Image"; }}
+                        onError={(e) => { e.target.src = "https://placehold.co/800x800/e5e7eb/64748b?text=BRUBLA"; }}
                     />
 
                     {/* Overlays */}
@@ -838,10 +838,10 @@ export default function ProductDetails() {
                             <div className="relative rounded-3xl overflow-hidden bg-white shadow-sm cursor-zoom-in"
                                 style={{ aspectRatio: "3/4" }}>
                                 <img
-                                    src={desktopMain || allImages[0] || "https://placehold.co/800x1067/e5e7eb/64748b?text=No+Image"}
+                                    src={desktopMain || allImages[0] || "https://placehold.co/800x1067/e5e7eb/64748b?text=BRUBLA"}
                                     alt={product.name}
                                     className="w-full h-full object-cover transition-opacity duration-300"
-                                    onError={(e) => { e.target.src = "https://placehold.co/800x1067/e5e7eb/64748b?text=No+Image"; }}
+                                    onError={(e) => { e.target.src = "https://placehold.co/800x1067/e5e7eb/64748b?text=BRUBLA"; }}
                                 />
                                 {currentStock === 0 && (
                                     <div className="absolute inset-0 bg-white/65 flex items-center justify-center">
@@ -1013,14 +1013,14 @@ export default function ProductDetails() {
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                                 {relatedProducts.map((rp) => {
                                     const rpImg = getOrderedImages(rp)[0] ||
-                                        "https://placehold.co/600x600/e5e7eb/64748b?text=No+Image";
+                                        "https://placehold.co/600x600/e5e7eb/64748b?text=BRUBLA";
                                     return (
                                         <div key={rp._id || rp.id} onClick={() => navigate(`/product/${rp._id || rp.id}`)}
                                             className="bg-white rounded-2xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-md transition-all">
                                             <div className="overflow-hidden" style={{ aspectRatio: "4/5" }}>
                                                 <img src={rpImg} alt={rp.name}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                    onError={(e) => { e.target.src = "https://placehold.co/600x600/e5e7eb/64748b?text=No+Image"; }} />
+                                                    onError={(e) => { e.target.src = "https://placehold.co/600x600/e5e7eb/64748b?text=BRUBLA"; }} />
                                             </div>
                                             <div className="p-3">
                                                 <p className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug">{rp.name}</p>

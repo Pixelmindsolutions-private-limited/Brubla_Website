@@ -57,7 +57,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove, onSaveForLater, isSelected
             src={item.mainImage || "https://via.placeholder.com/160x160/f3f4f6/9ca3af?text=Product"}
             alt={item.productName}
             className="w-full h-full object-cover rounded-lg"
-            onError={(e) => e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"}
+            onError={(e) => e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"}
           />
         </div>
 
@@ -467,7 +467,7 @@ const OrderReview = ({ selectedCartItems, selectedAddress, addresses, selectedPa
                   src={item.mainImage || "https://via.placeholder.com/60x60/f3f4f6/9ca3af?text=Product"} 
                   alt={item.productName}
                   className="w-16 h-16 object-cover rounded-lg"
-                  onError={(e) => e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=No+Image"}
+                  onError={(e) => e.target.src = "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA"}
                 />
                 <div className="flex-1">
                   <p className="font-medium text-gray-900 text-sm sm:text-base">{item.productName}</p>
