@@ -7,6 +7,7 @@ import {
   FaPinterestP,
   FaYoutube,
 } from "react-icons/fa";
+import logo from "../assets/Wlogopng.png";
 
 const footerColumns = [
   {
@@ -21,10 +22,10 @@ const footerColumns = [
   {
     title: "Company",
     links: [
-      { label: "About Us", to: "/home" },
+      { label: "Who We Are", to: "/aboutus" },
       { label: "Collections", to: "/collections" },
       // { label: "Wedding Edit", to: "/wedding" },
-      { label: "Join Us", to: "/joinUs" },
+      { label: "Join Us", to: "/joinus" },
     ],
   },
   {
@@ -39,9 +40,9 @@ const footerColumns = [
   {
     title: "Customer Support",
     links: [
-      { label: "Contact Us", to: "/home" },
+      { label: "Contact Us", to: "/contactus" },
       { label: "Track Order", to: "/profile/my-orders" },
-      { label: "FAQs", to: "/home" },
+      { label: "FAQs", to: "/faqs" },
     ],
   },
 ];
@@ -98,7 +99,7 @@ export default function Footer() {
             <div className="mb-4 inline-block">
               {/* brightness-0 invert turns a dark logo into a white one */}
               <img
-                src="/logo1.png"
+                src={logo}
                 alt="Brubla logo"
                 className="h-12 w-auto object-contain brightness sm:h-14"
               />

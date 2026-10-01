@@ -337,7 +337,7 @@ const CollectionSection = ({ id, title, subtitle, products, bgColor = "#fff", im
 
   return (
     <section
-      className="w-full py-10 md:py-12 overflow-hidden group"
+      className="w-full px-4 py-10 md:py-12 overflow-hidden group"
       style={{ background: bgColor }}
       aria-label={title}
     >

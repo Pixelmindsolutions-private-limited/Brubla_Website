@@ -10,6 +10,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaDownload, FaQuestionCircle, FaAndroid, FaApple } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import { ChevronRightIcon } from "lucide-react";
+import darkLogo from "../assets/Wlogopng.png";
+import lightLogo from "../assets/Blogopng.png";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ICON PRIMITIVES
@@ -379,8 +381,8 @@ const NavLogo = ({ onClick }) => {
     return (
         <div ref={ref} onClick={onClick} className="cursor-pointer flex-shrink-0">
             <img
-                src="/logo2.png"
-                className={`h-10 w-10 transition-colors duration-300 ${onDark ? "bg-white" : ""}`}
+                src={onDark ? darkLogo : lightLogo}
+                className={`h-10 w-10 transition-colors duration-300 ${onDark ? "" : ""}`}
                 alt="logo"
                 onError={(e) => {
                     e.target.style.display = "none";
@@ -1071,7 +1073,11 @@ const CollectionsPanel = ({ show, onMouseEnter, onMouseLeave, navbarHeight }) =>
                                 <img
                                     src={item.img} alt={item.title}
                                     className="w-full h-40 sm:h-44 md:h-48 object-cover transition-transform duration-500 group-hover:scale-105"
-                                    onError={e => { e.target.style.background = "#e8ddd5"; e.target.style.minHeight = "176px"; }}
+                                    onError={(e) => {
+                                        e.currentTarget.onerror = null;
+                                        e.currentTarget.src =
+                                            "https://placehold.co/600x800/e5e7eb/64748b?text=BRUBLA";
+                                    }}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition" />
                             </div>

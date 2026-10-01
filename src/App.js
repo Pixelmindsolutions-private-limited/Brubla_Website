@@ -1,3 +1,4 @@
+import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Home from './components/Home';
@@ -28,6 +29,11 @@ import WishlistPage from './pages/UserWishlist';
 import SearchResultsPage from './pages/SearchPage';
 import UserWallet from './pages/UserWallet';
 import AllExclusiveProductsPage from './components/AllExclusiveProducts';
+import FAQs from './pages/Faqs';
+import ContactUs from './pages/ContactUs';
+import BrublaLoader from './views/BrublaLoader';
+import BrublaExclusiveLoader from './views/BrublaExclusiveLoader';
+import AboutBrubla from './pages/AboutBrubla';
 
 /* =========================
    PRIVATE ROUTE COMPONENT
@@ -39,6 +45,44 @@ const PrivateRoute = ({ children }) => {
   return token ? children : <Navigate to="/" replace />;
 };
 
+const ExclusiveProductsWithLoader = () => {
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <>
+      <BrublaExclusiveLoader loading={loading} minDuration={2500} />
+      <ExclusiveProductsPage />
+    </>
+  );
+};
+
+const HomeWithLoader = () => {
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <>
+      <BrublaLoader loading={loading} minDuration={2000} />
+      <Home />
+    </>
+  );
+};
+
 function App() {
   return (
     <>
@@ -47,9 +91,12 @@ function App() {
       <Routes>
         <Route path="/" element={<BrublaLogin />} />
 
-        <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+        <Route path="/home" element={<PrivateRoute><HomeWithLoader /></PrivateRoute>} />
         <Route path="/exclusive" element={<PrivateRoute><ExclusivePage /></PrivateRoute>} />
-        <Route path="/exclusiveproducts" element={<PrivateRoute><ExclusiveProductsPage /></PrivateRoute>} />
+        <Route path="/aboutus" element={<PrivateRoute><AboutBrubla /></PrivateRoute>} />
+
+        <Route path="/exclusiveproducts" element={<PrivateRoute><ExclusiveProductsWithLoader /></PrivateRoute>} />
+
         <Route path="/all-exclusiveproducts" element={<PrivateRoute><AllExclusiveProductsPage /></PrivateRoute>} />
         <Route path="/exclusiveproducts/:id" element={<PrivateRoute><SingleExclusiveProduct /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
@@ -69,6 +116,8 @@ function App() {
         <Route path="/collections/:id" element={<PrivateRoute><SingleCollectionProducts /></PrivateRoute>} />
         <Route path="/wedding" element={<PrivateRoute><WeddingPlannerPage /></PrivateRoute>} />
         <Route path="/search" element={<PrivateRoute><SearchResultsPage /></PrivateRoute>} />
+        <Route path="/faqs" element={<PrivateRoute><FAQs /></PrivateRoute>} />
+        <Route path="/contactus" element={<PrivateRoute><ContactUs /></PrivateRoute>} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

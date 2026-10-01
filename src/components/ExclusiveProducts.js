@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Navbar from "./Navbar";
@@ -321,84 +321,256 @@ const Toolbar = ({ activeFilter, setFilter, sort, setSort, viewMode, setView, co
     );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FEATURED SPOTLIGHT → stacking cards. Each new card slides up over the
-// previous one; the card underneath shrinks and dims as it gets covered.
-// ─────────────────────────────────────────────────────────────────────────────
-const STACK_TOP = 88;   // px from top where the first card sticks
-const STACK_STEP = 22;  // px each later card sits lower, so edges peek out
+// needs: import { useState, useRef, useCallback } from "react";
+const PEEK_LAYERS = 3;
+const DRAG_START = 6;      // px of movement before it counts as a drag
+const SWIPE_VELOCITY = 0.5; // px/ms: a quick flick also flips the card
 
 const SPOTLIGHT_COPY = [
-    "Crafted in fine silk organza with hand embroidery and a contemporary silhouette.",
-    "Woven by hand on traditional looms, with a rich zari border and a soft drape.",
-    "A tailored velvet blazer dress that works for evening events and formal dinners.",
-    "Zardozi metalwork on a flared Anarkali cut, finished entirely by hand.",
+    "A standout piece from this season's edit, designed to be worn on repeat.",
+    "Refined cut, premium fabric and a fit that works from day to night.",
+    "An editor favourite that pairs easily with everything in your wardrobe.",
+    "Limited stock on this one. A timeless staple at a price worth grabbing.",
 ];
 
-const StackCard = ({ p, i, copy, cardRef }) => {
+const FeaturedSpotlight = () => {
+    const items = PRODUCTS.slice(0, 4);
+    const n = items.length;
+    const [active, setActive] = useState(0);
+    const [dragX, setDragX] = useState(0);
+    const [dragging, setDragging] = useState(false);
+
+    const startX = useRef(0);
+    const startT = useRef(0);
+    const pointerId = useRef(null);
+    const moved = useRef(false);
+    const deckRef = useRef(null);
+
+    const go = useCallback((dir) => setActive((a) => (a + dir + n) % n), [n]);
+
+    const onKeyDown = (e) => {
+        if (e.key === "ArrowRight") go(1);
+        if (e.key === "ArrowLeft") go(-1);
+    };
+
+    const onPointerDown = (e) => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        pointerId.current = e.pointerId;
+        startX.current = e.clientX;
+        startT.current = performance.now();
+        moved.current = false;
+    };
+
+    const onPointerMove = (e) => {
+        if (pointerId.current !== e.pointerId) return;
+        const dx = e.clientX - startX.current;
+
+        if (!moved.current) {
+            if (Math.abs(dx) < DRAG_START) return;
+            moved.current = true;
+            setDragging(true);
+            // capture only once it is a real drag, so plain clicks on buttons still work
+            deckRef.current?.setPointerCapture(e.pointerId);
+        }
+        setDragX(dx);
+    };
+
+    const endDrag = (e, cancelled = false) => {
+        if (pointerId.current !== e.pointerId) return;
+        pointerId.current = null;
+
+        if (moved.current) {
+            const dx = e.clientX - startX.current;
+            const dt = Math.max(performance.now() - startT.current, 1);
+            const width = deckRef.current?.offsetWidth || 400;
+            const far = Math.abs(dx) > Math.min(140, width * 0.2);
+            const fast = Math.abs(dx) / dt > SWIPE_VELOCITY && Math.abs(dx) > 30;
+            if (!cancelled && (far || fast)) go(dx < 0 ? 1 : -1);
+            // let the click that follows a drag be ignored, then reset
+            setTimeout(() => { moved.current = false; }, 0);
+        }
+        setDragging(false);
+        setDragX(0);
+    };
+
+    // stop the click that fires after a drag from opening the product or pressing a button
+    const onClickCapture = (e) => {
+        if (moved.current) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+    };
+
+    return (
+        <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-10 xl:px-14 pt-16 pb-8">
+            <h2 className="font-display font-black text-white text-[clamp(26px,4vw,44px)] tracking-[-0.02em] mb-2">
+                The spotlight edit
+            </h2>
+            <p className="font-body text-sm text-white/40 mb-8">
+                Drag, swipe or use the arrows to flip through this season's editor picks.
+            </p>
+
+            {/* DECK */}
+            <div
+                ref={deckRef}
+                tabIndex={0}
+                onKeyDown={onKeyDown}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endDrag}
+                onPointerCancel={(e) => endDrag(e, true)}
+                onClickCapture={onClickCapture}
+                onDragStart={(e) => e.preventDefault()}
+                className={`grid outline-none select-none [--peek:12px] sm:[--peek:16px] lg:[--peek:20px] ${
+                    dragging ? "cursor-grabbing" : "cursor-grab"
+                }`}
+                style={{
+                    paddingTop: `calc(var(--peek) * ${PEEK_LAYERS})`,
+                    touchAction: "pan-y", // vertical page scroll still works; horizontal drags come to us
+                }}
+            >
+                {items.map((p, i) => (
+                    <StackCard
+                        key={p.id}
+                        p={p}
+                        i={i}
+                        copy={SPOTLIGHT_COPY[i]}
+                        depth={(i - active + n) % n}
+                        dragX={dragX}
+                        dragging={dragging}
+                    />
+                ))}
+            </div>
+
+            {/* CONTROLS */}
+            <div className="mt-6 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    {items.map((p, i) => (
+                        <button
+                            key={p.id}
+                            aria-label={`Show card ${i + 1}`}
+                            onClick={() => setActive(i)}
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                                i === active ? "w-8 bg-white" : "w-2 bg-white/25 hover:bg-white/50"
+                            }`}
+                        />
+                    ))}
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold font-body text-white/40 tabular-nums">
+                        {String(active + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+                    </span>
+                    <button
+                        aria-label="Previous card"
+                        onClick={() => go(-1)}
+                        className="p-3 rounded-full bg-white/10 border border-white/20 text-white transition-all hover:bg-white hover:text-black active:scale-95"
+                    >
+                        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="15 6 9 12 15 18" />
+                        </svg>
+                    </button>
+                    <button
+                        aria-label="Next card"
+                        onClick={() => go(1)}
+                        className="p-3 rounded-full bg-white/10 border border-white/20 text-white transition-all hover:bg-white hover:text-black active:scale-95"
+                    >
+                        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 6 15 12 9 18" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+
+const StackCard = ({ p, i, copy, depth, dragX, dragging }) => {
     const navigate = useNavigate();
     const flip = i % 2 === 1;
+    const isFront = depth === 0;
+    const d = Math.min(depth, PEEK_LAYERS);
+
+    // only the front card follows the pointer
+    const tx = isFront ? dragX : 0;
+    const rot = isFront ? dragX * 0.03 : 0;
+
     return (
-        <div ref={cardRef} className="sticky" style={{ top: STACK_TOP + i * STACK_STEP, marginBottom: 56, zIndex: i + 1 }}>
-            <div onClick={() => navigate(`/exclusiveproducts/${p.id}`)} data-inner className="rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_-24px_60px_rgba(0,0,0,0.7)] will-change-transform"
-                style={{ transformOrigin: "50% 0%" }}>
-                <div className={`flex flex-col ${flip ? "md:flex-row-reverse" : "md:flex-row"}`}>
-                    <div className="relative overflow-hidden md:w-2/5 h-[280px] md:h-auto md:min-h-[400px]">
-                        <img src={p.img} alt={p.name} className="absolute inset-0 w-full h-full object-cover object-top" loading="lazy" />
+        <div
+            aria-hidden={!isFront}
+            inert={isFront ? undefined : ""}
+            className="transition-[transform,filter,opacity] duration-500 ease-out motion-reduce:transition-none will-change-transform"
+            style={{
+                gridArea: "1 / 1",
+                zIndex: 10 - d,
+                transformOrigin: "50% 0%",
+                transform: `translateX(${tx}px) rotate(${rot}deg) translateY(calc(var(--peek) * ${-d})) scale(${1 - d * 0.045})`,
+                filter: `brightness(${1 - d * 0.2})`,
+                opacity: depth > PEEK_LAYERS ? 0 : 1,
+                pointerEvents: isFront ? "auto" : "none",
+                // no easing while the card is glued to the pointer, easing again on release
+                transition: isFront && dragging ? "none" : undefined,
+            }}
+        >
+            <div
+                onClick={() => navigate(`/exclusiveproducts/${p.id}`)}
+                className="h-full rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_-24px_60px_rgba(0,0,0,0.7)]"
+            >
+                <div className={`h-full flex flex-col ${flip ? "md:flex-row-reverse" : "md:flex-row"}`}>
+                    <div className="relative overflow-hidden md:w-2/5 h-[240px] sm:h-[300px] md:h-auto md:min-h-[500px]">
+                        <img
+                            src={p.img}
+                            alt={p.name}
+                            draggable={false}
+                            className="absolute inset-0 w-full h-full object-cover object-top pointer-events-none"
+                            loading="lazy"
+                        />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                        <span className="absolute top-5 left-5 text-[10px] font-black tracking-[0.14em] uppercase px-3 py-1.5 rounded-full bg-white text-black">{p.badge}</span>
+                        <span className="absolute top-4 left-4 sm:top-5 sm:left-5 text-[10px] font-black tracking-[0.14em] uppercase px-3 py-1.5 rounded-full bg-white text-black">{p.badge}</span>
                     </div>
-                    <div className="flex-1 flex flex-col justify-center px-7 py-8 md:px-10 md:py-10">
+
+                    <div className="flex-1 flex flex-col justify-center px-5 py-6 sm:px-7 sm:py-8 md:px-10 md:py-10">
                         <p className="text-xs font-semibold mb-2 text-white/50 font-body">{p.brand}</p>
-                        <h2 className="font-black leading-tight mb-3 font-display text-white text-[clamp(24px,3.5vw,40px)] tracking-[-0.02em]">{p.name}</h2>
+                        <h2 className="font-black leading-tight mb-3 font-display text-white text-[clamp(22px,3.5vw,40px)] tracking-[-0.02em]">{p.name}</h2>
                         <p className="text-sm mb-5 font-body text-white/50 leading-relaxed max-w-md">{copy}</p>
-                        <div className="flex items-center gap-3 mb-6"><Stars rating={p.rating} /><span className="text-xs font-semibold font-body text-white/40">{p.reviews} verified reviews</span></div>
-                        <div className="flex items-center gap-5 mb-7">
-                            <div><span className="font-black text-white font-display text-[28px]">₹{p.price.toLocaleString()}</span><span className="text-sm line-through ml-2 font-body text-white/30">₹{p.orig.toLocaleString()}</span></div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-5 sm:mb-6">
+                            <Stars rating={p.rating} />
+                            <span className="text-xs font-semibold font-body text-white/40">{p.reviews} verified reviews</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6 sm:mb-7">
+                            <div>
+                                <span className="font-black text-white font-display text-[24px] sm:text-[28px]">₹{p.price.toLocaleString()}</span>
+                                <span className="text-sm line-through ml-2 font-body text-white/30">₹{p.orig.toLocaleString()}</span>
+                            </div>
                             <span className="text-[11px] font-black px-2.5 py-1 rounded-full font-body bg-white/10 text-white">Save ₹{(p.orig - p.price).toLocaleString()}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-black text-sm tracking-wide transition-all hover:scale-105 active:scale-95 bg-white text-black"><CartIcon c="w-4 h-4" />Add to Cart</button>
-                            <button aria-label="Wishlist" className="p-3.5 rounded-xl transition-all hover:scale-105 active:scale-95 bg-white/10 border border-white/20 text-white/60"><HeartIcon c="w-4 h-4" /></button>
-                            <button aria-label="Share" className="p-3.5 rounded-xl transition-all hover:scale-105 active:scale-95 bg-white/10 border border-white/20 text-white/60"><ShareIcon c="w-4 h-4" /></button>
+                            <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 sm:px-7 py-3.5 rounded-xl font-black text-sm tracking-wide transition-all hover:scale-105 active:scale-95 bg-white text-black"
+                            >
+                                <CartIcon c="w-4 h-4" />Add to Cart
+                            </button>
+                            <button
+                                aria-label="Wishlist"
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-3.5 rounded-xl transition-all hover:scale-105 active:scale-95 bg-white/10 border border-white/20 text-white/60"
+                            >
+                                <HeartIcon c="w-4 h-4" />
+                            </button>
+                            <button
+                                aria-label="Share"
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-3.5 rounded-xl transition-all hover:scale-105 active:scale-95 bg-white/10 border border-white/20 text-white/60"
+                            >
+                                <ShareIcon c="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    );
-};
-
-const FeaturedSpotlight = () => {
-    const items = PRODUCTS.slice(0, 4);
-    const refs = useRef([]);
-
-    useRafScroll(() => {
-        if (reduceMotion()) return;
-        refs.current.forEach((el, i) => {
-            const inner = el && el.querySelector("[data-inner]");
-            const next = refs.current[i + 1];
-            if (!inner) return;
-            if (!next) { inner.style.transform = ""; inner.style.filter = ""; return; }
-            // 0 → next card still far away, 1 → next card fully covers this one
-            const h = inner.offsetHeight;
-            const myStick = STACK_TOP + i * STACK_STEP;
-            const nextStick = STACK_TOP + (i + 1) * STACK_STEP;
-            const nextTop = next.getBoundingClientRect().top;
-            const p = Math.min(Math.max((myStick + h - nextTop) / (myStick + h - nextStick), 0), 1);
-            inner.style.transform = `scale(${1 - p * 0.06})`;
-            inner.style.filter = `brightness(${1 - p * 0.45})`;
-        });
-    });
-
-    return (
-        <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-10 xl:px-14 pt-16 pb-8">
-            <h2 className="font-display font-black text-white text-[clamp(26px,4vw,44px)] tracking-[-0.02em] mb-2">The spotlight edit</h2>
-            <p className="font-body text-sm text-white/40 mb-10">Scroll to move through this season's editor picks.</p>
-            {items.map((p, i) => (
-                <StackCard key={p.id} p={p} i={i} copy={SPOTLIGHT_COPY[i]} cardRef={el => (refs.current[i] = el)} />
-            ))}
-        </section>
     );
 };
 

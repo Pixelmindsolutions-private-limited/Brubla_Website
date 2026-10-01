@@ -301,7 +301,7 @@ export default function FlashBanner() {
     <div
       className="
         w-full relative overflow-hidden
-        h-[200px] sm:h-[300px] md:h-[500px]
+        h-[460px] lg:h-[600px]
       "
       style={{ background: "#0C0C0C" }}
       onMouseEnter={pause}

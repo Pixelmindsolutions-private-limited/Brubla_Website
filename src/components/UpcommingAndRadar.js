@@ -273,7 +273,7 @@ export function UpcomingSection() {
   };
 
   return (
-    <section className="w-full py-10 py-12 sm:py-16 md:py-20 bg-gradient-to-br from-white to-gray-50" aria-label="Upcoming Collections">
+    <section className="w-full px-4 py-10 py-12 sm:py-16 md:py-20 bg-gradient-to-br from-white to-gray-50" aria-label="Upcoming Collections">
       <div className="max-w-9xl mx-auto">
         {/* Header */}
         <div ref={headerRef} className="px-4 sm:px-6 lg:px-8 xl:px-12">

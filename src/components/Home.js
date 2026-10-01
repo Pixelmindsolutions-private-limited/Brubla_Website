@@ -9,6 +9,11 @@ import AdBanner from "./AdBanner";
 import AllCollections from "./AllCollections";
 import Footer from "./Footer";
 import { BannerSection } from "../pages/WeddingBanner"
+import Advertising from "../pages/Advertizing";
+import { SAMPLE_PRODUCTS } from "../pages/Advertizing";
+import QuoteSection from "../views/QuoteSection";
+import OccasionBooking from "../pages/OccasionBooking";
+import HomeExclussive from "../pages/HomeExclussive";
 
 const Home = () => {
     return (
@@ -17,14 +22,21 @@ const Home = () => {
             <main className="pt-[40px] lg:pb-0">
                 <HeroBanneer />
                 <CategorySection />
-                <FlashBanner />
+                {/* <FlashBanner /> */}
+                <AllCollections />
                 <RecommendedProducts />
                 <CollectionGrid />
-                <UpcomingSection />
-                <BannerSection />
+                {/* <UpcomingSection /> */}
+                <OccasionBooking />
+                <HomeExclussive image="/images/exclusive.jpg" to="/exclusive" />
                 {/* <AdBanner /> */}
+                {/* <BannerSection /> */}
                 {/* <DesignsOnRadar /> */}
-                <AllCollections />
+
+                {/* <Advertising type="categories" title="Our categories" count={3} />
+                <Advertising type="collections" title="Our collections" count={5} />
+                <Advertising type="products" title="Best sellers" items={SAMPLE_PRODUCTS} count={7} /> */}
+                <QuoteSection />
             </main>
             <Footer />
 
